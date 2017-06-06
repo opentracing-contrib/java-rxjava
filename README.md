@@ -51,5 +51,5 @@ TracingRxJava2Utils.enableTracing(tracer);
 
 [ci-img]: https://travis-ci.org/opentracing-contrib/java-rxjava.svg?branch=master
 [ci]: https://travis-ci.org/opentracing-contrib/java-rxjava
-[maven-img]: https://img.shields.io/maven-central/v/io.opentracing.contrib/opentracing-rxjava-1.svg?maxAge=2592000
+[maven-img]: https://img.shields.io/maven-central/v/io.opentracing.contrib/opentracing-rxjava-1.svg
 [maven]: http://search.maven.org/#search%7Cga%7C1%7Copentracing-rxjava-1
