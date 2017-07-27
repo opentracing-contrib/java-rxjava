@@ -1,37 +1,23 @@
 package io.opentracing.rxjava2;
 
 
-import io.opentracing.ActiveSpan;
-import io.opentracing.ActiveSpan.Continuation;
-import io.opentracing.Tracer;
+import io.opentracing.Span;
 
 class TracingRunnable implements Runnable {
 
   private final Runnable runnable;
-  private final Continuation continuation;
+  private final Span span;
 
-  TracingRunnable(Runnable runnable, Tracer tracer) {
+  TracingRunnable(Runnable runnable) {
     this.runnable = runnable;
-    ActiveSpan activeSpan = tracer.activeSpan();
-    if (activeSpan != null) {
-      this.continuation = activeSpan.capture();
-    } else {
-      this.continuation = null;
-    }
+    this.span = SpanHolder.get();
+    SpanHolder.clear();
   }
 
   @Override
   public void run() {
-    ActiveSpan activeSpan = null;
-    if (continuation != null) {
-      activeSpan = continuation.activate();
-    }
-    try {
-      runnable.run();
-    } finally {
-      if (activeSpan != null) {
-        activeSpan.deactivate();
-      }
-    }
+    SpanHolder.set(span);
+    runnable.run();
+    SpanHolder.clear();
   }
 }
