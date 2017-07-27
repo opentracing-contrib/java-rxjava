@@ -40,7 +40,42 @@ public class TracingTest {
   }
 
   @Test
-  public void testParalel() {
+  public void sequential() {
+    Observable<Integer> observable = Observable.range(1, 2)
+        .map(new Function<Integer, Integer>() {
+          @Override
+          public Integer apply(Integer integer) throws Exception {
+            return integer * 3;
+          }
+        })
+        .filter(new Predicate<Integer>() {
+          @Override
+          public boolean test(Integer integer) throws Exception {
+            return integer % 2 == 0;
+          }
+        });
+
+    observable.subscribe(new Consumer<Integer>() {
+      @Override
+      public void accept(Integer integer) throws Exception {
+        System.out.println(integer);
+      }
+    });
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(3));
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(3, spans.size());
+    checkSpans(spans);
+    checkParentIds(spans);
+
+    assertNull(mockTracer.activeSpan());
+
+    assertNull(SpanHolder.get());
+  }
+
+  @Test
+  public void parallel() {
     Observable<Integer> observable = Observable.range(1, 2)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())

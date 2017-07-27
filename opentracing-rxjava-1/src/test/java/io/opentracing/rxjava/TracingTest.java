@@ -39,7 +39,7 @@ public class TracingTest {
   }
 
   @Test
-  public void test() {
+  public void sequential() {
     Observable<Integer> observable = Observable.range(1, 2)
         .map(new Func1<Integer, Integer>() {
           @Override
@@ -64,7 +64,7 @@ public class TracingTest {
   }
 
   @Test
-  public void testParallel() {
+  public void parallel() {
     Observable<Integer> observable = Observable.range(1, 2)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
