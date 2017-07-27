@@ -9,8 +9,9 @@ import static org.junit.Assert.assertNull;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
 import io.opentracing.util.ThreadLocalActiveSpanSource;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +30,7 @@ public class TracingTest {
 
   @BeforeClass
   public static void init() {
-    GlobalTracer.register(mockTracer);
-    TracingRxJavaUtils.enableTracing();
+    TracingRxJavaUtils.enableTracing(mockTracer);
   }
 
   @Before
@@ -58,6 +58,7 @@ public class TracingTest {
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(2, spans.size());
     checkSpans(spans);
+    checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
   }
@@ -91,6 +92,7 @@ public class TracingTest {
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(4, spans.size());
     checkSpans(spans);
+    checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
   }
@@ -108,6 +110,22 @@ public class TracingTest {
     for (MockSpan mockSpan : mockSpans) {
       assertEquals("rxjava-1", mockSpan.tags().get(Tags.COMPONENT.getKey()));
       assertEquals(0, mockSpan.generatedErrors().size());
+    }
+  }
+
+  /**
+   * check that span parentId is equal to previous span spanId
+   */
+  private void checkParentIds(List<MockSpan> mockSpans) {
+    Collections.sort(mockSpans, new Comparator<MockSpan>() {
+      @Override
+      public int compare(MockSpan o1, MockSpan o2) {
+        return Long.compare(o1.parentId(), o2.parentId());
+      }
+    });
+
+    for (int i = 1; i < mockSpans.size(); i++) {
+      assertEquals(mockSpans.get(i - 1).context().spanId(), mockSpans.get(i).parentId());
     }
   }
 }
