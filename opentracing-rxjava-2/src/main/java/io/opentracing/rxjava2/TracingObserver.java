@@ -1,8 +1,10 @@
 package io.opentracing.rxjava2;
 
-import io.opentracing.ActiveSpan;
-import io.opentracing.ActiveSpan.Continuation;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.tag.Tags;
+import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import java.io.PrintWriter;
@@ -13,13 +15,24 @@ import java.util.Map;
 
 class TracingObserver implements Observer<Object>, Disposable {
 
+  static final String COMPONENT_NAME = "rxjava-2";
   private Disposable upstream;
   private final Observer observer;
-  private final Continuation continuation;
+  private final Span span;
 
-  TracingObserver(Observer observer, ActiveSpan activeSpan) {
+  TracingObserver(Observable observable, Observer observer, Tracer tracer) {
     this.observer = observer;
-    this.continuation = activeSpan.capture();
+
+    SpanBuilder builder = tracer.buildSpan(observable.getClass().getSimpleName())
+        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
+
+    Span parent = SpanHolder.get();
+    if (parent != null) {
+      builder.asChildOf(parent);
+    }
+    span = builder.startManual();
+
+    SpanHolder.set(span);
   }
 
   @Override
@@ -39,9 +52,9 @@ class TracingObserver implements Observer<Object>, Disposable {
     try {
       observer.onError(t);
     } finally {
-      ActiveSpan activeSpan = continuation.activate();
-      onError(t, activeSpan);
-      activeSpan.deactivate();
+      span.finish();
+      onError(t, span);
+      SpanHolder.clear();
     }
   }
 
@@ -50,7 +63,8 @@ class TracingObserver implements Observer<Object>, Disposable {
     try {
       observer.onComplete();
     } finally {
-      continuation.activate().deactivate();
+      span.finish();
+      SpanHolder.clear();
     }
   }
 
@@ -64,7 +78,7 @@ class TracingObserver implements Observer<Object>, Disposable {
     return upstream.isDisposed();
   }
 
-  private static void onError(Throwable throwable, ActiveSpan span) {
+  private static void onError(Throwable throwable, Span span) {
     span.setTag(Tags.ERROR.getKey(), Boolean.TRUE);
     span.log(errorLogs(throwable));
   }

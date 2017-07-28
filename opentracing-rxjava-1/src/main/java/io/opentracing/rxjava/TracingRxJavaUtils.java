@@ -18,6 +18,7 @@ import rx.plugins.RxJavaHooks;
  */
 public class TracingRxJavaUtils {
 
+  static final String COMPONENT_NAME = "rxjava-1";
 
   /**
    * Enable tracing using registered tracer in GlobalTracer
@@ -49,7 +50,7 @@ public class TracingRxJavaUtils {
           public void call(Subscriber subscriber) {
             try (ActiveSpan activeSpan = tracer.buildSpan(onSubscribe.getClass().getSimpleName())
                 .startActive()) {
-              activeSpan.setTag(Tags.COMPONENT.getKey(), "rxjava-1");
+              activeSpan.setTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
               TracingSubscriber t = new TracingSubscriber(subscriber, activeSpan);
               subscriber.add(t);
               onSubscribe.call(t);
