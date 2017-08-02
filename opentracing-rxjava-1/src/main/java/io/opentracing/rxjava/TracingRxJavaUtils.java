@@ -50,6 +50,10 @@ public class TracingRxJavaUtils {
           public void call(Subscriber subscriber) {
             try (ActiveSpan activeSpan = tracer.buildSpan(onSubscribe.getClass().getSimpleName())
                 .startActive()) {
+              if (onSubscribe.getClass().getSimpleName().isEmpty()) {
+                activeSpan.setOperationName(onSubscribe.getClass().getName());
+              }
+
               activeSpan.setTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
               TracingSubscriber t = new TracingSubscriber(subscriber, activeSpan);
               subscriber.add(t);

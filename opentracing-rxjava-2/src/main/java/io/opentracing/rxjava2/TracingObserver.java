@@ -32,6 +32,10 @@ class TracingObserver implements Observer<Object>, Disposable {
     }
     span = builder.startManual();
 
+    if (observable.getClass().getSimpleName().isEmpty()) {
+      span.setOperationName(observable.getClass().getName());
+    }
+
     SpanHolder.set(span);
   }
 
