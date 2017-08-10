@@ -4,6 +4,7 @@ package io.opentracing.rxjava2;
 import static com.jayway.awaitility.Awaitility.await;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import io.opentracing.mock.MockSpan;
@@ -41,6 +42,92 @@ public class TracingTest {
 
   @Test
   public void sequential() {
+    executeSequentialObservable();
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(3));
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(3, spans.size());
+    checkSpans(spans);
+    checkParentIds(spans);
+
+    assertNull(mockTracer.activeSpan());
+
+    assertNull(SpanHolder.get());
+  }
+
+  @Test
+  public void two_sequential() {
+    executeSequentialObservable();
+    executeSequentialObservable();
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(6));
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(6, spans.size());
+
+    for (int i = 1; i < 3; i++) {
+      assertEquals(spans.get(0).context().traceId(), spans.get(i).context().traceId());
+    }
+    for (int i = 4; i < 6; i++) {
+      assertEquals(spans.get(3).context().traceId(), spans.get(i).context().traceId());
+    }
+    assertNotEquals(spans.get(0).context().traceId(), spans.get(3).context().traceId());
+
+    checkParentIds(spans.subList(0, 3));
+    checkParentIds(spans.subList(3, 6));
+
+    assertNull(mockTracer.activeSpan());
+  }
+
+  @Test
+  public void parallel() {
+    executeParallelObservable();
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(5));
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(5, spans.size());
+    checkSpans(spans);
+    checkParentIds(spans);
+
+    assertNull(mockTracer.activeSpan());
+
+    assertNull(SpanHolder.get());
+  }
+
+  @Test
+  public void two_parallel() {
+    executeParallelObservable();
+    executeParallelObservable();
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(10));
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(10, spans.size());
+
+    Collections.sort(spans, new Comparator<MockSpan>() {
+      @Override
+      public int compare(MockSpan o1, MockSpan o2) {
+        return Long.compare(o1.context().traceId(), o2.context().traceId());
+      }
+    });
+
+    for (int i = 1; i < 5; i++) {
+      assertEquals(spans.get(0).context().traceId(), spans.get(i).context().traceId());
+    }
+    for (int i = 6; i < 10; i++) {
+      assertEquals(spans.get(5).context().traceId(), spans.get(i).context().traceId());
+    }
+
+    assertNotEquals(spans.get(0).context().traceId(), spans.get(5).context().traceId());
+
+    checkParentIds(spans.subList(0, 5));
+    checkParentIds(spans.subList(5, 10));
+
+    assertNull(mockTracer.activeSpan());
+  }
+
+  private void executeSequentialObservable() {
     Observable<Integer> observable = Observable.range(1, 2)
         .map(new Function<Integer, Integer>() {
           @Override
@@ -61,21 +148,9 @@ public class TracingTest {
         System.out.println(integer);
       }
     });
-
-    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(3));
-
-    List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(3, spans.size());
-    checkSpans(spans);
-    checkParentIds(spans);
-
-    assertNull(mockTracer.activeSpan());
-
-    assertNull(SpanHolder.get());
   }
 
-  @Test
-  public void parallel() {
+  private void executeParallelObservable() {
     Observable<Integer> observable = Observable.range(1, 2)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
@@ -98,17 +173,6 @@ public class TracingTest {
         System.out.println(integer);
       }
     });
-
-    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(5));
-
-    List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(5, spans.size());
-    checkSpans(spans);
-    checkParentIds(spans);
-
-    assertNull(mockTracer.activeSpan());
-
-    assertNull(SpanHolder.get());
   }
 
   private Callable<Integer> reportedSpansSize() {
