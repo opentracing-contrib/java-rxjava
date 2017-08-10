@@ -148,7 +148,7 @@ public class TracingTest {
   }
 
   private void executeSequentialObservable() {
-    Observable<Integer> observable = Observable.range(1, 2)
+    Observable<Integer> observable = Observable.range(1, 10)
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
@@ -165,17 +165,19 @@ public class TracingTest {
   }
 
   private void executeParallelObservable() {
-    Observable<Integer> observable = Observable.range(1, 2)
+    Observable<Integer> observable = Observable.range(1, 10)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
+            sleep();
             return integer * 3;
           }
         }).filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
+            sleep();
             return integer % 2 == 2;
           }
         });
@@ -186,5 +188,13 @@ public class TracingTest {
         System.out.println(integer);
       }
     });
+  }
+
+  private void sleep() {
+    try {
+      TimeUnit.MILLISECONDS.sleep(200L);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 }
