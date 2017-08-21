@@ -12,7 +12,6 @@ import java.util.Map;
 
 class TracingObserver implements Observer<Object>, Disposable {
 
-  static final String COMPONENT_NAME = "rxjava-2";
   private Disposable upstream;
   private final Observer observer;
   private final Span span;

@@ -232,7 +232,8 @@ public class TracingTest {
 
   private void checkSpans(List<MockSpan> mockSpans) {
     for (MockSpan mockSpan : mockSpans) {
-      assertEquals(TracingObserver.COMPONENT_NAME, mockSpan.tags().get(Tags.COMPONENT.getKey()));
+      assertEquals(TracingRxJava2Utils.COMPONENT_NAME,
+          mockSpan.tags().get(Tags.COMPONENT.getKey()));
       assertEquals(0, mockSpan.generatedErrors().size());
     }
   }

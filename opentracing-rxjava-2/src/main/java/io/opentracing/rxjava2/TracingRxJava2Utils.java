@@ -16,6 +16,8 @@ import io.reactivex.plugins.RxJavaPlugins;
 
 public class TracingRxJava2Utils {
 
+  static final String COMPONENT_NAME = "rxjava-2";
+
   public static void enableTracing() {
     enableTracing(GlobalTracer.get());
   }
@@ -33,7 +35,7 @@ public class TracingRxJava2Utils {
       @Override
       public Observable apply(Observable observable) throws Exception {
         SpanBuilder spanBuilder = tracer.buildSpan(observable.getClass().getSimpleName())
-            .withTag(Tags.COMPONENT.getKey(), TracingObserver.COMPONENT_NAME);
+            .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
         Span parent = SpanStackHolder.get();
         if (parent != null) {
           spanBuilder.addReference(References.CHILD_OF, parent.context());
@@ -55,5 +57,4 @@ public class TracingRxJava2Utils {
       }
     });
   }
-
 }
