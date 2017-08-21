@@ -1,8 +1,6 @@
 package io.opentracing.rxjava2;
 
 import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.tag.Tags;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -20,23 +18,12 @@ class TracingObserver implements Observer<Object>, Disposable {
   private final Observer observer;
   private final Span span;
 
-  TracingObserver(Observable observable, Observer observer, Tracer tracer) {
+  TracingObserver(Observable observable, Observer observer) {
     this.observer = observer;
 
-    SpanBuilder builder = tracer.buildSpan(observable.getClass().getSimpleName())
-        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
+    span = SpanStackHolder.remove();
 
-    Span parent = SpanHolder.get();
-    if (parent != null) {
-      builder.asChildOf(parent);
-    }
-    span = builder.startManual();
 
-    if (observable.getClass().getSimpleName().isEmpty()) {
-      span.setOperationName(observable.getClass().getName());
-    }
-
-    SpanHolder.set(span);
   }
 
   @Override
@@ -58,7 +45,6 @@ class TracingObserver implements Observer<Object>, Disposable {
     } finally {
       span.finish();
       onError(t, span);
-      SpanHolder.clear();
     }
   }
 
@@ -68,7 +54,6 @@ class TracingObserver implements Observer<Object>, Disposable {
       observer.onComplete();
     } finally {
       span.finish();
-      SpanHolder.clear();
     }
   }
 

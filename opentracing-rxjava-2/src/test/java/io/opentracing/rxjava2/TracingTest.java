@@ -55,8 +55,7 @@ public class TracingTest {
     checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
-
-    assertNull(SpanHolder.get());
+    assertNull(SpanStackHolder.get());
   }
 
   @Test
@@ -79,6 +78,7 @@ public class TracingTest {
     checkParentIds(spans.subList(3, 6));
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanStackHolder.get());
   }
 
   @Test
@@ -99,10 +99,11 @@ public class TracingTest {
     }
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanStackHolder.get());
   }
 
   @Test
-  public void parallel() {
+  public void parallel() throws Exception {
     executeParallelObservable("parallel");
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(5));
@@ -113,12 +114,11 @@ public class TracingTest {
     checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
-
-    assertNull(SpanHolder.get());
+    assertNull(SpanStackHolder.get());
   }
 
   @Test
-  public void two_parallel() {
+  public void two_parallel() throws Exception {
     executeParallelObservable("first_parallel");
     executeParallelObservable("second_parallel");
 
@@ -146,6 +146,7 @@ public class TracingTest {
     checkParentIds(spans.subList(5, 10));
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanStackHolder.get());
   }
 
   @Test
@@ -167,6 +168,7 @@ public class TracingTest {
     }
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanStackHolder.get());
   }
 
   private void executeSequentialObservable() {
