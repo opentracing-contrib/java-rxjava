@@ -51,8 +51,7 @@ public class TracingRxJava2Utils {
     RxJavaPlugins.setOnObservableSubscribe(new BiFunction<Observable, Observer, Observer>() {
       @Override
       public Observer apply(Observable observable, Observer observer) throws Exception {
-        System.out.println(Thread.currentThread().getName());
-        return new TracingObserver(observable, observer);
+        return new TracingObserver(observer);
       }
     });
   }

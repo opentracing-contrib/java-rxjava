@@ -15,7 +15,9 @@ class TracingRunnable implements Runnable {
 
   @Override
   public void run() {
-    SpanStackHolder.add(span);
+    if (span != null) {
+      SpanStackHolder.add(span);
+    }
     runnable.run();
   }
 }
