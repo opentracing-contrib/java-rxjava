@@ -5,12 +5,15 @@ import static com.jayway.awaitility.Awaitility.await;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import io.opentracing.ActiveSpan;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.ThreadLocalActiveSpanSource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -70,8 +73,28 @@ public class TracingTest {
   }
 
   @Test
+  public void sequential_with_parent() {
+    try (ActiveSpan parent = mockTracer.buildSpan("parent").startActive()) {
+      executeSequentialObservable();
+      executeSequentialObservable();
+    }
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(5, spans.size());
+
+    MockSpan parent = getOneSpanByOperationName(spans, "parent");
+    assertNotNull(parent);
+
+    for (MockSpan span : spans) {
+      assertEquals(parent.context().traceId(), span.context().traceId());
+    }
+
+    assertNull(mockTracer.activeSpan());
+  }
+
+  @Test
   public void parallel() {
-    executeParallelObservable();
+    executeParallelObservable("parallel");
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(4));
 
@@ -85,8 +108,8 @@ public class TracingTest {
 
   @Test
   public void two_parallel() {
-    executeParallelObservable();
-    executeParallelObservable();
+    executeParallelObservable("first_parallel");
+    executeParallelObservable("second_parallel");
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(8));
     List<MockSpan> spans = mockTracer.finishedSpans();
@@ -110,6 +133,27 @@ public class TracingTest {
 
     checkParentIds(spans.subList(0, 4));
     checkParentIds(spans.subList(4, 8));
+
+    assertNull(mockTracer.activeSpan());
+  }
+
+  @Test
+  public void parallel_with_parent() throws Exception {
+    try (ActiveSpan parent = mockTracer.buildSpan("parallel_parent").startActive()) {
+      executeParallelObservable("first_parallel_with_parent");
+      executeParallelObservable("second_parallel_with_parent");
+    }
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(9));
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(9, spans.size());
+
+    MockSpan parent = getOneSpanByOperationName(spans, "parallel_parent");
+    assertNotNull(parent);
+
+    for (MockSpan span : spans) {
+      assertEquals(parent.context().traceId(), span.context().traceId());
+    }
 
     assertNull(mockTracer.activeSpan());
   }
@@ -164,7 +208,7 @@ public class TracingTest {
     });
   }
 
-  private void executeParallelObservable() {
+  private void executeParallelObservable(final String name) {
     Observable<Integer> observable = Observable.range(1, 10)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
@@ -178,14 +222,14 @@ public class TracingTest {
           @Override
           public Boolean call(Integer integer) {
             sleep();
-            return integer % 2 == 2;
+            return integer % 2 == 0;
           }
         });
 
     observable.subscribe(new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
-        System.out.println(integer);
+        System.out.println(name + ": " + integer);
       }
     });
   }
@@ -196,5 +240,19 @@ public class TracingTest {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
+  }
+
+  private MockSpan getOneSpanByOperationName(List<MockSpan> spans, String operationName) {
+    List<MockSpan> found = new ArrayList<>();
+    for (MockSpan span : spans) {
+      if (operationName.equals(span.operationName())) {
+        found.add(span);
+      }
+    }
+    if (found.size() > 1) {
+      throw new RuntimeException(
+          "Ups, too many spans (" + found.size() + ") with operation name " + operationName);
+    }
+    return found.isEmpty() ? null : spans.get(0);
   }
 }
