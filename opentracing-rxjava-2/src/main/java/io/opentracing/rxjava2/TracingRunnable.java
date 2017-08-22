@@ -10,14 +10,14 @@ class TracingRunnable implements Runnable {
 
   TracingRunnable(Runnable runnable) {
     this.runnable = runnable;
-    this.span = SpanHolder.get();
-    SpanHolder.clear();
+    this.span = SpanStackHolder.remove();
   }
 
   @Override
   public void run() {
-    SpanHolder.set(span);
+    if (span != null) {
+      SpanStackHolder.add(span);
+    }
     runnable.run();
-    SpanHolder.clear();
   }
 }

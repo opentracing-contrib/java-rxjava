@@ -1,10 +1,7 @@
 package io.opentracing.rxjava2;
 
 import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.tag.Tags;
-import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import java.io.PrintWriter;
@@ -15,28 +12,13 @@ import java.util.Map;
 
 class TracingObserver implements Observer<Object>, Disposable {
 
-  static final String COMPONENT_NAME = "rxjava-2";
   private Disposable upstream;
   private final Observer observer;
   private final Span span;
 
-  TracingObserver(Observable observable, Observer observer, Tracer tracer) {
+  TracingObserver(Observer observer) {
     this.observer = observer;
-
-    SpanBuilder builder = tracer.buildSpan(observable.getClass().getSimpleName())
-        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME);
-
-    Span parent = SpanHolder.get();
-    if (parent != null) {
-      builder.asChildOf(parent);
-    }
-    span = builder.startManual();
-
-    if (observable.getClass().getSimpleName().isEmpty()) {
-      span.setOperationName(observable.getClass().getName());
-    }
-
-    SpanHolder.set(span);
+    span = SpanStackHolder.remove();
   }
 
   @Override
@@ -56,9 +38,10 @@ class TracingObserver implements Observer<Object>, Disposable {
     try {
       observer.onError(t);
     } finally {
-      span.finish();
-      onError(t, span);
-      SpanHolder.clear();
+      if (span != null) {
+        span.finish();
+        onError(t, span);
+      }
     }
   }
 
@@ -67,8 +50,9 @@ class TracingObserver implements Observer<Object>, Disposable {
     try {
       observer.onComplete();
     } finally {
-      span.finish();
-      SpanHolder.clear();
+      if (span != null) {
+        span.finish();
+      }
     }
   }
 

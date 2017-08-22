@@ -18,6 +18,7 @@ class TracingAction implements Action0 {
     } else {
       this.continuation = null;
     }
+    SpanContextHolder.clear();
   }
 
   @Override

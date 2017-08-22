@@ -52,6 +52,7 @@ public class TracingTest {
     checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   @Test
@@ -70,6 +71,7 @@ public class TracingTest {
     checkParentIds(spans.subList(2, 4));
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   @Test
@@ -90,20 +92,22 @@ public class TracingTest {
     }
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   @Test
   public void parallel() {
     executeParallelObservable("parallel");
 
-    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(4));
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(5));
 
     List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(4, spans.size());
+    assertEquals(5, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
     checkParentIds(spans);
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   @Test
@@ -111,9 +115,9 @@ public class TracingTest {
     executeParallelObservable("first_parallel");
     executeParallelObservable("second_parallel");
 
-    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(8));
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(10));
     List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(8, spans.size());
+    assertEquals(10, spans.size());
 
     Collections.sort(spans, new Comparator<MockSpan>() {
       @Override
@@ -122,19 +126,20 @@ public class TracingTest {
       }
     });
 
-    for (int i = 1; i < 4; i++) {
+    for (int i = 1; i < 5; i++) {
       assertEquals(spans.get(0).context().traceId(), spans.get(i).context().traceId());
     }
-    for (int i = 5; i < 8; i++) {
-      assertEquals(spans.get(4).context().traceId(), spans.get(i).context().traceId());
+    for (int i = 6; i < 10; i++) {
+      assertEquals(spans.get(5).context().traceId(), spans.get(i).context().traceId());
     }
 
-    assertNotEquals(spans.get(0).context().traceId(), spans.get(4).context().traceId());
+    assertNotEquals(spans.get(0).context().traceId(), spans.get(5).context().traceId());
 
-    checkParentIds(spans.subList(0, 4));
-    checkParentIds(spans.subList(4, 8));
+    checkParentIds(spans.subList(0, 5));
+    checkParentIds(spans.subList(5, 10));
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   @Test
@@ -144,9 +149,9 @@ public class TracingTest {
       executeParallelObservable("second_parallel_with_parent");
     }
 
-    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(9));
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(), equalTo(11));
     List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(9, spans.size());
+    assertEquals(11, spans.size());
 
     MockSpan parent = getOneSpanByOperationName(spans, "parallel_parent");
     assertNotNull(parent);
@@ -156,6 +161,7 @@ public class TracingTest {
     }
 
     assertNull(mockTracer.activeSpan());
+    assertNull(SpanContextHolder.get());
   }
 
   private Callable<Integer> reportedSpansSize() {
