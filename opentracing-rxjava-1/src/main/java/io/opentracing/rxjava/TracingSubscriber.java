@@ -1,29 +1,36 @@
 package io.opentracing.rxjava;
 
-import io.opentracing.ActiveSpan;
-import io.opentracing.ActiveSpan.Continuation;
-import io.opentracing.tag.Tags;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import io.opentracing.Tracer;
 import rx.Producer;
 import rx.Subscriber;
 
 
-class TracingSubscriber extends Subscriber {
+/**
+ * Tracing decorator for RxJava {@link Subscriber}
+ */
+class TracingSubscriber<T> extends AbstractTracingSubscriber<T> {
 
-  private final Subscriber subscriber;
-  private final Continuation continuation;
+  private final Subscriber<T> subscriber;
 
-  TracingSubscriber(Subscriber subscriber, ActiveSpan activeSpan) {
+  TracingSubscriber(Subscriber<T> subscriber, String operationName, Tracer tracer) {
+    super(operationName, tracer);
+
+    if (subscriber == null) {
+      throw new IllegalArgumentException("subscriber can not be null");
+    }
+
     this.subscriber = subscriber;
-    this.continuation = activeSpan.capture();
+    subscriber.add(this);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public void onNext(Object o) {
+  public void onStart() {
+    super.onStart();
+    subscriber.onStart();
+  }
+
+  @Override
+  public void onNext(T o) {
     subscriber.onNext(o);
   }
 
@@ -32,9 +39,7 @@ class TracingSubscriber extends Subscriber {
     try {
       subscriber.onError(t);
     } finally {
-      ActiveSpan activeSpan = continuation.activate();
-      onError(t, activeSpan);
-      activeSpan.deactivate();
+      super.onError(t);
     }
   }
 
@@ -43,32 +48,12 @@ class TracingSubscriber extends Subscriber {
     try {
       subscriber.onCompleted();
     } finally {
-      continuation.activate().deactivate();
+      super.onCompleted();
     }
   }
 
   @Override
   public void setProducer(Producer p) {
     subscriber.setProducer(p);
-  }
-
-  private static void onError(Throwable throwable, ActiveSpan span) {
-    span.setTag(Tags.ERROR.getKey(), Boolean.TRUE);
-    span.log(errorLogs(throwable));
-  }
-
-  private static Map<String, Object> errorLogs(Throwable throwable) {
-    Map<String, Object> errorLogs = new HashMap<>();
-    errorLogs.put("event", Tags.ERROR.getKey());
-    errorLogs.put("error.kind", throwable.getClass().getName());
-    errorLogs.put("error.object", throwable);
-
-    errorLogs.put("message", throwable.getMessage());
-
-    StringWriter sw = new StringWriter();
-    throwable.printStackTrace(new PrintWriter(sw));
-    errorLogs.put("stack", sw.toString());
-
-    return errorLogs;
   }
 }

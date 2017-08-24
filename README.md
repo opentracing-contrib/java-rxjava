@@ -32,21 +32,54 @@ pom.xml
 // Instantiate tracer
 Tracer tracer = ...
 
-// Optionally register tracer with GlobalTracer 
-GlobalTracer.register(tracer);
-
 ```
 
 ### RxJava 1
+
+#### Subscriber
+
 ```java
-// Enable Tracing via TracingRxJavaUtils
-TracingRxJavaUtils.enableTracing(tracer);
+// Decorate RxJava Subscriber  with TracingSubscriber
+Subscriber<Integer> subscriber = ...
+Subscriber<Integer> tracingSubscriber = new TracingSubscriber<>(subscriber, "subscriber", tracer);
+
+// Subscribe Observable to TracingSubscriber
+observable.subscribe(tracingSubscriber);
+```
+
+#### Action
+
+```java
+// Decorate RxJava Action with TracingActionSubscriber
+Action1<Integer> onNext = ...
+TracingActionSubscriber<Integer> tracingSubscriber = new TracingActionSubscriber<>(onNext, "action", tracer);
+
+// Subscribe Observable to TracingActionSubscriber
+observable.subscribe(tracingSubscriber);
 ```
 
 ### RxJava 2
+
+#### Observer
+
 ```java
-// Enable Tracing via TracingRxJava2Utils
-TracingRxJava2Utils.enableTracing(tracer);
+// Decorate RxJava Observer with TracingObserver
+Observer<Integer> observer = ...
+Observer<Integer> tracingObserver = new TracingObserver<>(observer, "observer", tracer);
+
+// Subscribe Observable to TracingObserver
+observable.subscribe(tracingObserver);
+```
+
+#### Consumer
+
+```java
+// Decorate RxJava Consumer with TracingConsumer
+Consumer<Integer> onNext = ...
+TracingConsumer<Integer> tracingConsumer = new TracingConsumer(onNext, "consumer", tracer);
+
+// Subscribe Observable to TracingConsumer
+observable.subscribe(tracingConsumer);
 ```
 
 [ci-img]: https://travis-ci.org/opentracing-contrib/java-rxjava.svg?branch=master
