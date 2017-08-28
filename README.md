@@ -52,9 +52,22 @@ observable.subscribe(tracingSubscriber);
 ```java
 // Decorate RxJava Action with TracingActionSubscriber
 Action1<Integer> onNext = ...
-TracingActionSubscriber<Integer> tracingSubscriber = new TracingActionSubscriber<>(onNext, "action", tracer);
+TracingActionSubscriber<Integer> tracingSubscriber = new TracingActionSubscriber<>(onNext,
+        "action", tracer);
 
 // Subscribe Observable to TracingActionSubscriber
+observable.subscribe(tracingSubscriber);
+```
+
+#### Observer
+
+```java
+// Decorate RxJava Observer with TracingObserverSubscriber
+Observer<Integer> observer = ...
+TracingObserverSubscriber<Integer> tracingSubscriber = new TracingObserverSubscriber(observer, 
+        "observer", tracer);
+
+//  Subscribe Observable to TracingObserverSubscriber
 observable.subscribe(tracingSubscriber);
 ```
 

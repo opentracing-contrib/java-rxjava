@@ -7,13 +7,13 @@ import io.reactivex.disposables.Disposable;
 /**
  * Tracing decorator for RxJava {@link Observer}
  */
-class TracingObserver<T> extends AbstractTracingObserver<T> implements Disposable {
+public class TracingObserver<T> extends AbstractTracingObserver<T> implements Disposable {
 
   private Disposable upstream;
   private final Observer<T> observer;
 
 
-  TracingObserver(Observer<T> observer, String operationName, Tracer tracer) {
+  public TracingObserver(Observer<T> observer, String operationName, Tracer tracer) {
     super(operationName, tracer);
     this.observer = observer;
   }

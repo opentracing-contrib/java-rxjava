@@ -14,11 +14,9 @@ class TracingEmptyAction<T0> implements Action0, Action1<T0> {
 
   @Override
   public void call() {
-
   }
 
   @Override
   public void call(T0 t0) {
-
   }
 }

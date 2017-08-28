@@ -8,11 +8,11 @@ import rx.Subscriber;
 /**
  * Tracing decorator for RxJava {@link Subscriber}
  */
-class TracingSubscriber<T> extends AbstractTracingSubscriber<T> {
+public class TracingSubscriber<T> extends AbstractTracingSubscriber<T> {
 
   private final Subscriber<T> subscriber;
 
-  TracingSubscriber(Subscriber<T> subscriber, String operationName, Tracer tracer) {
+  public TracingSubscriber(Subscriber<T> subscriber, String operationName, Tracer tracer) {
     super(operationName, tracer);
 
     if (subscriber == null) {

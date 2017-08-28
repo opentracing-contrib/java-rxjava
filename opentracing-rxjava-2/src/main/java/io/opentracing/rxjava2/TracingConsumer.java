@@ -12,10 +12,6 @@ import io.reactivex.internal.observers.LambdaObserver;
  */
 public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Disposable {
 
-  private final Consumer<? super T> onNext;
-  private final Consumer<? super Throwable> onError;
-  private final Action onComplete;
-  private final Consumer<? super Disposable> onSubscribe;
   private final LambdaObserver<T> lambdaObserver;
 
   public TracingConsumer(String operationName, Tracer tracer) {
@@ -48,11 +44,6 @@ public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Di
     requireNonNull(onComplete, "onComplete can not be null");
     requireNonNull(onSubscribe, "onSubscribe can not be null");
     requireNonNull(tracer, "tracer can not be null");
-
-    this.onNext = onNext;
-    this.onError = onError;
-    this.onComplete = onComplete;
-    this.onSubscribe = onSubscribe;
 
     lambdaObserver = new LambdaObserver<>(onNext, onError, onComplete, onSubscribe);
   }
