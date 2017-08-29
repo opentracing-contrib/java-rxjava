@@ -26,6 +26,10 @@ class AbstractTracingSubscriber<T> extends Subscriber<T> {
     this.tracer = tracer;
   }
 
+  Span getSpan() {
+    return span;
+  }
+
   @Override
   public void onStart() {
     span = tracer.buildSpan(operationName)

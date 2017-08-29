@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNull;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.ThreadLocalActiveSpanSource;
+import io.opentracing.util.ThreadLocalScopeManager;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -21,17 +21,22 @@ import rx.Observer;
 
 public class TracingObserverTest {
 
-  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalActiveSpanSource(),
-      MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP);
 
   @Before
-  public void before() throws Exception {
+  public void beforeClass() {
+    mockTracer.setScopeManager(new ThreadLocalScopeManager());
+    TracingRxJavaUtils.enableTracing(mockTracer);
+  }
+
+  @Before
+  public void before() {
     mockTracer.reset();
   }
 
   @Test
   public void sequential() {
-    Observable<Integer> observable = createSequentialObservable();
+    Observable<Integer> observable = createSequentialObservable(mockTracer);
     Observer<Integer> observer = observer("sequential");
 
     TracingObserverSubscriber<Integer> tracingObserverSubscriber =
@@ -43,12 +48,12 @@ public class TracingObserverTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
   public void parallel() {
-    Observable<Integer> observable = createParallelObservable();
+    Observable<Integer> observable = createParallelObservable(mockTracer);
 
     Observer<Integer> observer = observer("parallel");
 
@@ -63,7 +68,7 @@ public class TracingObserverTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   private static <T> Observer<T> observer(final String name) {

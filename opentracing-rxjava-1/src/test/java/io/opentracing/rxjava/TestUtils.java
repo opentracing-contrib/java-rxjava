@@ -2,6 +2,7 @@ package io.opentracing.rxjava;
 
 import static io.opentracing.rxjava.AbstractTracingSubscriber.COMPONENT_NAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -40,17 +41,18 @@ class TestUtils {
     };
   }
 
-  static Observable<Integer> createSequentialObservable() {
+  static Observable<Integer> createSequentialObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         });
   }
 
-  static Observable<Integer> createParallelObservable() {
+  static Observable<Integer> createParallelObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
@@ -58,22 +60,25 @@ class TestUtils {
           @Override
           public Integer call(Integer integer) {
             sleep();
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         }).filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
             sleep();
+            assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });
   }
 
-  static Observable<Long> fromInterval() {
+  static Observable<Long> fromInterval(final MockTracer mockTracer) {
     return Observable.interval(500, TimeUnit.MILLISECONDS, Schedulers.computation())
         .map(new Func1<Long, Long>() {
           @Override
           public Long call(Long value) {
+            assertNotNull(mockTracer.scopeManager().active());
             return value * 2;
           }
         })
