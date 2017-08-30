@@ -23,7 +23,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-public class SpanHolderTest {
+public class TracingTest {
 
   private static final MockTracer mockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP);
 
@@ -51,7 +51,6 @@ public class SpanHolderTest {
             assertNotNull(mockTracer.scopeManager().active());
             mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
             return integer * 2;
-
           }
         })
         .observeOn(Schedulers.computation())
@@ -81,6 +80,56 @@ public class SpanHolderTest {
 
     assertEquals(10, spans.get(0).tags().get(String.valueOf(10)));
     assertEquals(10, spans.get(1).tags().get(String.valueOf(10)));
+
+    assertNull(mockTracer.scopeManager().active());
+  }
+
+  @Test
+  public void traced_with_parent() throws InterruptedException {
+
+    Scope scope = mockTracer.buildSpan("parent").startActive(Observer.FINISH_ON_CLOSE);
+
+    Observable<Integer> ob = Observable.range(1, 10)
+        .observeOn(Schedulers.io())
+        .subscribeOn(Schedulers.computation())
+        .map(new Func1<Integer, Integer>() {
+          @Override
+          public Integer call(Integer integer) {
+            assertNotNull(mockTracer.scopeManager().active());
+            mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
+            return integer * 2;
+          }
+        })
+        .observeOn(Schedulers.computation())
+        .filter(new Func1<Integer, Boolean>() {
+          @Override
+          public Boolean call(Integer integer) {
+            assertNotNull(mockTracer.scopeManager().active());
+            //mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
+            return integer % 2 == 0;
+          }
+        });
+
+    Action1<Integer> action1 = new Action1<Integer>() {
+      @Override
+      public void call(Integer integer) {
+        assertNotNull(mockTracer.scopeManager().active());
+        System.out.println(integer);
+      }
+    };
+
+    ob.subscribe(new TracingActionSubscriber<>(action1, "test", mockTracer));
+    ob.subscribe(new TracingActionSubscriber<>(action1, "test2", mockTracer));
+
+    scope.close();
+
+    await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(3));
+
+    List<MockSpan> spans = mockTracer.finishedSpans();
+    assertEquals(3, spans.size());
+
+    assertEquals(10, spans.get(1).tags().get(String.valueOf(10)));
+    assertEquals(10, spans.get(2).tags().get(String.valueOf(10)));
 
     assertNull(mockTracer.scopeManager().active());
   }
@@ -123,50 +172,6 @@ public class SpanHolderTest {
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(0, spans.size());
-
-    assertNull(mockTracer.scopeManager().active());
-  }
-
-  @Test
-  public void not_traced_with_parent() throws Exception {
-
-    final CountDownLatch latch = new CountDownLatch(10);
-
-    Scope scope = mockTracer.buildSpan("parent").startActive(Observer.FINISH_ON_CLOSE);
-
-    Observable<Integer> ob = Observable.range(1, 10)
-        .observeOn(Schedulers.io())
-        .subscribeOn(Schedulers.computation())
-        .map(new Func1<Integer, Integer>() {
-          @Override
-          public Integer call(Integer integer) {
-            assertNotNull(mockTracer.scopeManager().active());
-            return integer * 2;
-          }
-        })
-        .filter(new Func1<Integer, Boolean>() {
-          @Override
-          public Boolean call(Integer integer) {
-            latch.countDown();
-            assertNotNull(mockTracer.scopeManager().active());
-            return integer % 2 == 0;
-          }
-        });
-
-    Action1<Integer> action1 = new Action1<Integer>() {
-      @Override
-      public void call(Integer integer) {
-        assertNotNull(mockTracer.scopeManager().active());
-        System.out.println(integer);
-      }
-    };
-
-    ob.subscribe(action1);
-    latch.await(10, TimeUnit.SECONDS);
-    scope.close();
-
-    List<MockSpan> spans = mockTracer.finishedSpans();
-    assertEquals(1, spans.size());
 
     assertNull(mockTracer.scopeManager().active());
   }
