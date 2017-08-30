@@ -42,10 +42,14 @@ public class TracingRxJavaUtils {
                 AbstractTracingSubscriber tracingSubscriber = (AbstractTracingSubscriber) subscriber2;
                 Span span = tracingSubscriber.getSpan();
                 scope = tracer.scopeManager().activate(span);
-              } else {
-                final Scope scope2 = tracer.buildSpan("observable").startActive(Observer.FINISH_ON_CLOSE);
+              } else if (tracer.scopeManager().active() != null) {
+                // if there is no parent don't create new span
+
+                final Scope scope2 = tracer.buildSpan("observable")
+                    .startActive(Observer.FINISH_ON_CLOSE);
                 subscriber2.add(new Subscription() {
                   private volatile boolean unsubscribed;
+
                   @Override
                   public void unsubscribe() {
                     scope2.close();
