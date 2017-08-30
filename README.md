@@ -36,6 +36,11 @@ Tracer tracer = ...
 
 ### RxJava 1
 
+```java
+// Enable RxJava tracing:
+TracingRxJavaUtils.enableTracing(tracer);
+```
+
 #### Subscriber
 
 ```java

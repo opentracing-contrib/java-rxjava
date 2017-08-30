@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import rx.Observable;
 import rx.Subscriber;
@@ -28,6 +29,11 @@ public class TracingSubscriberTest {
 
   private static final MockTracer mockTracer = new MockTracer(new ThreadLocalActiveSpanSource(),
       MockTracer.Propagator.TEXT_MAP);
+
+  @BeforeClass
+  public static void beforeClass() {
+    TracingRxJavaUtils.enableTracing(mockTracer);
+  }
 
   @Before
   public void before() throws Exception {
