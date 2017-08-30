@@ -1,13 +1,11 @@
 package io.opentracing.rxjava;
 
 import io.opentracing.Scope;
-import io.opentracing.Scope.Observer;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
-import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -42,7 +40,7 @@ public class TracingRxJavaUtils {
                 AbstractTracingSubscriber tracingSubscriber = (AbstractTracingSubscriber) subscriber2;
                 Span span = tracingSubscriber.getSpan();
                 scope = tracer.scopeManager().activate(span);
-              } else if (tracer.scopeManager().active() != null) {
+              } /* else if (tracer.scopeManager().active() != null) {
                 // if there is no parent don't create new span
 
                 final Scope scope2 = tracer.buildSpan("observable")
@@ -61,8 +59,7 @@ public class TracingRxJavaUtils {
                     return unsubscribed;
                   }
                 });
-
-              }
+              }*/
             }
 
             onSubscribe.call(subscriber);
