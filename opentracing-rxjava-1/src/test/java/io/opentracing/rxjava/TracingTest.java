@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import rx.Observable;
-import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -179,7 +178,6 @@ public class TracingTest {
 
   @Test
   public void trace_only_observable_with_parent() throws Exception {
-    final Scope scope = mockTracer.buildSpan("parent").startActive();
 
     Observable<Integer> ob = Observable.range(1, 10)
         .observeOn(Schedulers.io())
@@ -197,23 +195,22 @@ public class TracingTest {
           public Boolean call(Integer integer) {
             return integer % 2 == 0;
           }
-        }).doOnCompleted(new Action0() {
-          @Override
-          public void call() {
-            scope.span().finish();
-          }
         });
 
+    final CountDownLatch latch = new CountDownLatch(10);
     Action1<Integer> action1 = new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
         assertNotNull(mockTracer.scopeManager().active());
         System.out.println(integer);
+        latch.countDown();
       }
     };
 
+    final Scope scope = mockTracer.buildSpan("parent").startActive(Observer.FINISH_ON_CLOSE);
     ob.subscribe(action1);
 
+    latch.await(10, TimeUnit.SECONDS);
     scope.close();
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(1));
