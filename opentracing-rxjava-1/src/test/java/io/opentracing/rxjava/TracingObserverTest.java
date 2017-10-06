@@ -21,11 +21,11 @@ import rx.Observer;
 
 public class TracingObserverTest {
 
-  private static final MockTracer mockTracer = new MockTracer(MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
+          MockTracer.Propagator.TEXT_MAP);
 
   @Before
   public void beforeClass() {
-    mockTracer.setScopeManager(new ThreadLocalScopeManager());
     TracingRxJavaUtils.enableTracing(mockTracer);
   }
 

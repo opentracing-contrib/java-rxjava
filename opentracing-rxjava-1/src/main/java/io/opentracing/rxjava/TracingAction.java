@@ -27,7 +27,7 @@ class TracingAction implements Action0 {
   public void call() {
     Scope scope = null;
     if (span != null) {
-      scope = tracer.scopeManager().activate(span);
+      scope = tracer.scopeManager().activate(span, false);
     }
 
     try {

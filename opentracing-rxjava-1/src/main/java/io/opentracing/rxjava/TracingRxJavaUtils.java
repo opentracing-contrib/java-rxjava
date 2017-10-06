@@ -39,7 +39,7 @@ public class TracingRxJavaUtils {
               if (subscriber2 instanceof AbstractTracingSubscriber) {
                 AbstractTracingSubscriber tracingSubscriber = (AbstractTracingSubscriber) subscriber2;
                 Span span = tracingSubscriber.getSpan();
-                scope = tracer.scopeManager().activate(span);
+                scope = tracer.scopeManager().activate(span, false);
               } /* else if (tracer.scopeManager().active() != null) {
                 // if there is no parent don't create new span
 

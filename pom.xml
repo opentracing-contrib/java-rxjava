@@ -47,11 +47,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
 
-    <opentracing.version>0.30.1-SNAPSHOT</opentracing.version>
+    <opentracing.version>0.31.0-RC1</opentracing.version>
   </properties>
 
   <modules>
     <module>opentracing-rxjava-1</module>
+    <module>opentracing-rxjava-2</module>
   </modules>
 
   <dependencies>
