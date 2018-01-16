@@ -1,24 +1,38 @@
+/*
+ * Copyright 2017-2018 The OpenTracing Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package io.opentracing.rxjava;
 
 
-import static com.jayway.awaitility.Awaitility.await;
 import static io.opentracing.rxjava.TestUtils.checkSpans;
 import static io.opentracing.rxjava.TestUtils.createParallelObservable;
 import static io.opentracing.rxjava.TestUtils.createSequentialObservable;
 import static io.opentracing.rxjava.TestUtils.reportedSpansSize;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import io.opentracing.ActiveSpan;
+import io.opentracing.Scope;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.ThreadLocalActiveSpanSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import io.opentracing.util.ThreadLocalScopeManager;
 import org.junit.Before;
 import org.junit.Test;
 import rx.Observable;
@@ -26,11 +40,16 @@ import rx.Subscriber;
 
 public class TracingSubscriberTest {
 
-  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalActiveSpanSource(),
-      MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
+          MockTracer.Propagator.TEXT_MAP);
 
   @Before
-  public void before() throws Exception {
+  public void beforeClass() {
+    TracingRxJavaUtils.enableTracing(mockTracer);
+  }
+
+  @Before
+  public void before() {
     mockTracer.reset();
   }
 
@@ -42,7 +61,7 @@ public class TracingSubscriberTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
@@ -55,12 +74,12 @@ public class TracingSubscriberTest {
 
     assertNotEquals(spans.get(0).context().traceId(), spans.get(1).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
   public void sequential_with_parent() {
-    try (ActiveSpan parent = mockTracer.buildSpan("parent").startActive()) {
+    try (Scope parent = mockTracer.buildSpan("parent").startActive(true)) {
       executeSequentialObservable("sequential_with_parent first");
       executeSequentialObservable("sequential_with_parent second");
     }
@@ -75,12 +94,12 @@ public class TracingSubscriberTest {
       assertEquals(parent.context().traceId(), span.context().traceId());
     }
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
   public void from_interval() {
-    Observable<Long> observable = TestUtils.fromInterval();
+    Observable<Long> observable = TestUtils.fromInterval(mockTracer);
 
     Subscriber<Long> subscriber = subscriber("from_interval");
 
@@ -92,7 +111,7 @@ public class TracingSubscriberTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
@@ -105,7 +124,7 @@ public class TracingSubscriberTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
@@ -119,12 +138,13 @@ public class TracingSubscriberTest {
 
     assertNotEquals(spans.get(0).context().traceId(), spans.get(1).context().traceId());
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   @Test
   public void parallel_with_parent() throws Exception {
-    try (ActiveSpan parent = mockTracer.buildSpan("parallel_parent").startActive()) {
+    try (Scope parent = mockTracer.buildSpan("parallel_parent")
+        .startActive(true)) {
       executeParallelObservable("first_parallel_with_parent");
       executeParallelObservable("second_parallel_with_parent");
     }
@@ -140,11 +160,11 @@ public class TracingSubscriberTest {
       assertEquals(parent.context().traceId(), span.context().traceId());
     }
 
-    assertNull(mockTracer.activeSpan());
+    assertNull(mockTracer.scopeManager().active());
   }
 
   private void executeSequentialObservable(final String name) {
-    Observable<Integer> observable = createSequentialObservable();
+    Observable<Integer> observable = createSequentialObservable(mockTracer);
 
     Subscriber<Integer> subscriber = subscriber(name);
 
@@ -152,7 +172,7 @@ public class TracingSubscriberTest {
   }
 
   private void executeParallelObservable(final String name) {
-    Observable<Integer> observable = createParallelObservable();
+    Observable<Integer> observable = createParallelObservable(mockTracer);
 
     Subscriber<Integer> subscriber = subscriber(name);
 

@@ -11,25 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.opentracing.rxjava;
+package io.opentracing.rxjava2;
 
-import rx.functions.Action0;
-import rx.functions.Action1;
 
-class TracingEmptyAction<T0> implements Action0, Action1<T0> {
+import io.opentracing.Tracer;
+import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
 
-  private static final TracingEmptyAction EMPTY_ACTION = new TracingEmptyAction();
 
-  @SuppressWarnings("unchecked")
-  static <T0> TracingEmptyAction<T0> empty() {
-    return EMPTY_ACTION;
-  }
+public class TracingRxJava2Utils {
 
-  @Override
-  public void call() {
-  }
+  public static void enableTracing(final Tracer tracer) {
 
-  @Override
-  public void call(T0 t0) {
+    RxJavaPlugins.setScheduleHandler(new Function<Runnable, Runnable>() {
+      @Override
+      public Runnable apply(Runnable runnable) {
+        return new TracingRunnable(runnable, tracer);
+      }
+    });
   }
 }

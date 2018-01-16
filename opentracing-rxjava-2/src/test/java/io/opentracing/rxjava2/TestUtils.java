@@ -1,7 +1,21 @@
+/*
+ * Copyright 2017-2018 The OpenTracing Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package io.opentracing.rxjava2;
 
 import static io.opentracing.rxjava2.AbstractTracingObserver.COMPONENT_NAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -16,23 +30,25 @@ import java.util.concurrent.TimeUnit;
 
 class TestUtils {
 
-  static Observable<Integer> createSequentialObservable() {
+  static Observable<Integer> createSequentialObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .map(new Function<Integer, Integer>() {
           @Override
           public Integer apply(Integer integer) throws Exception {
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
         .filter(new Predicate<Integer>() {
           @Override
           public boolean test(Integer integer) throws Exception {
+            assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });
   }
 
-  static Observable<Integer> createParallelObservable() {
+  static Observable<Integer> createParallelObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
@@ -40,6 +56,7 @@ class TestUtils {
           @Override
           public Integer apply(Integer integer) throws Exception {
             sleep();
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
@@ -47,6 +64,7 @@ class TestUtils {
           @Override
           public boolean test(Integer integer) throws Exception {
             sleep();
+            assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });

@@ -11,25 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.opentracing.rxjava;
+package io.opentracing.rxjava2;
 
-import rx.functions.Action0;
-import rx.functions.Action1;
+import io.opentracing.Scope;
 
-class TracingEmptyAction<T0> implements Action0, Action1<T0> {
+class SpanHolder {
 
-  private static final TracingEmptyAction EMPTY_ACTION = new TracingEmptyAction();
+  private static final SpanHolder holder = new SpanHolder();
+  private final ThreadLocal<Scope> scope = new ThreadLocal<>();
 
-  @SuppressWarnings("unchecked")
-  static <T0> TracingEmptyAction<T0> empty() {
-    return EMPTY_ACTION;
+  static Scope get() {
+    return holder.scope.get();
   }
 
-  @Override
-  public void call() {
+  static void set(Scope scope) {
+    holder.scope.set(scope);
   }
 
-  @Override
-  public void call(T0 t0) {
+  static void clear() {
+    Scope scope = holder.scope.get();
+    if (scope != null) {
+      scope.close();
+    }
+    holder.scope.remove();
   }
+
 }

@@ -13,23 +13,37 @@
  */
 package io.opentracing.rxjava;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
 import rx.functions.Action0;
-import rx.functions.Action1;
 
-class TracingEmptyAction<T0> implements Action0, Action1<T0> {
 
-  private static final TracingEmptyAction EMPTY_ACTION = new TracingEmptyAction();
+class TracingAction implements Action0 {
 
-  @SuppressWarnings("unchecked")
-  static <T0> TracingEmptyAction<T0> empty() {
-    return EMPTY_ACTION;
+  private final Action0 action0;
+  private final Tracer tracer;
+  private final Span span;
+
+  TracingAction(Action0 action0, Tracer tracer) {
+    this.action0 = action0;
+    this.tracer = tracer;
+    span = tracer.activeSpan();
   }
 
   @Override
   public void call() {
-  }
+    Scope scope = null;
+    if (span != null) {
+      scope = tracer.scopeManager().activate(span, false);
+    }
 
-  @Override
-  public void call(T0 t0) {
+    try {
+      action0.call();
+    } finally {
+      if (scope != null) {
+        scope.close();
+      }
+    }
   }
 }
