@@ -15,6 +15,7 @@ package io.opentracing.rxjava2;
 
 import static io.opentracing.rxjava2.AbstractTracingObserver.COMPONENT_NAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -29,23 +30,25 @@ import java.util.concurrent.TimeUnit;
 
 class TestUtils {
 
-  static Observable<Integer> createSequentialObservable() {
+  static Observable<Integer> createSequentialObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .map(new Function<Integer, Integer>() {
           @Override
           public Integer apply(Integer integer) throws Exception {
+            //assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
         .filter(new Predicate<Integer>() {
           @Override
           public boolean test(Integer integer) throws Exception {
+            //assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });
   }
 
-  static Observable<Integer> createParallelObservable() {
+  static Observable<Integer> createParallelObservable(final MockTracer mockTracer) {
     return Observable.range(1, 10)
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.computation())
@@ -53,6 +56,7 @@ class TestUtils {
           @Override
           public Integer apply(Integer integer) throws Exception {
             sleep();
+            //assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
@@ -60,6 +64,7 @@ class TestUtils {
           @Override
           public boolean test(Integer integer) throws Exception {
             sleep();
+            //assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });

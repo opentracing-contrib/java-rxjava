@@ -27,6 +27,7 @@ import io.opentracing.mock.MockTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -44,10 +45,12 @@ public class TracingConsumerTest {
 
   @Test
   public void sequential() {
-    Observable<Integer> observable = createSequentialObservable();
-    Consumer<Integer> onNext = consumer();
+    Observable<Integer> observable = createSequentialObservable(mockTracer);
+    List<Integer> result = new ArrayList<>();
+    Consumer<Integer> onNext = consumer(result);
 
     observable.subscribe(new TracingConsumer<>(onNext, "sequential", mockTracer));
+    assertEquals(5, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(1, spans.size());
@@ -58,13 +61,15 @@ public class TracingConsumerTest {
 
   @Test
   public void parallel() {
-    Observable<Integer> observable = createParallelObservable();
+    Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Consumer<Integer> onNext = consumer();
+    List<Integer> result = new ArrayList<>();
+    Consumer<Integer> onNext = consumer(result);
 
     observable.subscribe(new TracingConsumer<>(onNext, "sequential", mockTracer));
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(1));
+    assertEquals(5, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(1, spans.size());
@@ -73,11 +78,12 @@ public class TracingConsumerTest {
     assertNull(mockTracer.scopeManager().active());
   }
 
-  private <T> Consumer<T> consumer() {
+  private <T> Consumer<T> consumer(final List<T> result) {
     return new Consumer<T>() {
       @Override
       public void accept(T value) throws Exception {
         System.out.println(value);
+        result.add(value);
       }
     };
   }

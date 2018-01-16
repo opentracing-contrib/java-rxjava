@@ -34,6 +34,7 @@ import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +51,10 @@ public class TracingObserverTest {
 
   @Test
   public void sequential() {
-    executeSequentialObservable("sequential");
+    List<Integer> result = new ArrayList<>();
+    executeSequentialObservable("sequential", result);
+
+    assertEquals(5, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(1, spans.size());
@@ -61,8 +65,11 @@ public class TracingObserverTest {
 
   @Test
   public void two_sequential() {
-    executeSequentialObservable("two_sequential first");
-    executeSequentialObservable("two_sequential second");
+    List<Integer> result = new ArrayList<>();
+    executeSequentialObservable("two_sequential first", result);
+    executeSequentialObservable("two_sequential second", result);
+
+    assertEquals(10, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(2, spans.size());
@@ -74,10 +81,13 @@ public class TracingObserverTest {
 
   @Test
   public void sequential_with_parent() {
+    List<Integer> result = new ArrayList<>();
     try (Scope parent = mockTracer.buildSpan("parent").startActive(true)) {
-      executeSequentialObservable("sequential_with_parent first");
-      executeSequentialObservable("sequential_with_parent second");
+      executeSequentialObservable("sequential_with_parent first", result);
+      executeSequentialObservable("sequential_with_parent second", result);
     }
+
+    assertEquals(10, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
@@ -94,9 +104,12 @@ public class TracingObserverTest {
 
   @Test
   public void parallel() throws Exception {
-    executeParallelObservable("parallel");
+    List<Integer> result = new ArrayList<>();
+    executeParallelObservable("parallel", result);
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(1));
+
+    assertEquals(5, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(1, spans.size());
@@ -107,10 +120,14 @@ public class TracingObserverTest {
 
   @Test
   public void two_parallel() throws Exception {
-    executeParallelObservable("first_parallel");
-    executeParallelObservable("second_parallel");
+    List<Integer> result = new CopyOnWriteArrayList<>();
+    executeParallelObservable("first_parallel", result);
+    executeParallelObservable("second_parallel", result);
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(2));
+
+    assertEquals(10, result.size());
+
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(2, spans.size());
 
@@ -121,12 +138,16 @@ public class TracingObserverTest {
 
   @Test
   public void parallel_with_parent() throws Exception {
+    List<Integer> result = new CopyOnWriteArrayList<>();
     try (Scope parent = mockTracer.buildSpan("parallel_parent").startActive(true)) {
-      executeParallelObservable("first_parallel_with_parent");
-      executeParallelObservable("second_parallel_with_parent");
+      executeParallelObservable("first_parallel_with_parent", result);
+      executeParallelObservable("second_parallel_with_parent", result);
     }
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(3));
+
+    assertEquals(10, result.size());
+
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
 
@@ -140,24 +161,24 @@ public class TracingObserverTest {
     assertNull(mockTracer.scopeManager().active());
   }
 
-  private void executeSequentialObservable(String name) {
-    Observable<Integer> observable = createSequentialObservable();
+  private void executeSequentialObservable(String name, List<Integer> result) {
+    Observable<Integer> observable = createSequentialObservable(mockTracer);
 
-    Observer<Integer> observer = observer(name);
+    Observer<Integer> observer = observer(name, result);
 
     observable.subscribe(new TracingObserver<>(observer, "sequential", mockTracer));
 
   }
 
-  private void executeParallelObservable(final String name) {
-    Observable<Integer> observable = createParallelObservable();
+  private void executeParallelObservable(final String name, List<Integer> result) {
+    Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Observer<Integer> observer = observer(name);
+    Observer<Integer> observer = observer(name, result);
 
     observable.subscribe(new TracingObserver<>(observer, "parallel", mockTracer));
   }
 
-  private static <T> Observer<T> observer(final String name) {
+  private static <T> Observer<T> observer(final String name, final List<T> result) {
     return new Observer<T>() {
       @Override
       public void onSubscribe(Disposable d) {
@@ -167,6 +188,7 @@ public class TracingObserverTest {
       @Override
       public void onNext(T value) {
         System.out.println(name + ": " + value);
+        result.add(value);
       }
 
       @Override
