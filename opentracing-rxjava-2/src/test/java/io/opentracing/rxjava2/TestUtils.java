@@ -35,14 +35,14 @@ class TestUtils {
         .map(new Function<Integer, Integer>() {
           @Override
           public Integer apply(Integer integer) throws Exception {
-            //assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
         .filter(new Predicate<Integer>() {
           @Override
           public boolean test(Integer integer) throws Exception {
-            //assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });
@@ -56,7 +56,7 @@ class TestUtils {
           @Override
           public Integer apply(Integer integer) throws Exception {
             sleep();
-            //assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().active());
             return integer * 3;
           }
         })
@@ -64,7 +64,7 @@ class TestUtils {
           @Override
           public boolean test(Integer integer) throws Exception {
             sleep();
-            //assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().active());
             return integer % 2 == 0;
           }
         });

@@ -52,7 +52,7 @@ public class TracingTest {
   }
 
   @Test
-  public void traced() throws InterruptedException {
+  public void traced() {
 
     Observable<Integer> ob = Observable.range(1, 10)
         .observeOn(Schedulers.io())
@@ -60,7 +60,6 @@ public class TracingTest {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            //System.out.println("map: " + Thread.currentThread().getName());
             assertNotNull(mockTracer.scopeManager().active());
             mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
             return integer * 2;
@@ -70,7 +69,6 @@ public class TracingTest {
         .filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
-            //System.out.println("filter: " + Thread.currentThread().getName());
             return integer % 2 == 0;
           }
         });
@@ -98,7 +96,7 @@ public class TracingTest {
   }
 
   @Test
-  public void traced_with_parent() throws InterruptedException {
+  public void traced_with_parent() {
 
     Scope scope = mockTracer.buildSpan("parent").startActive(true);
 
@@ -118,7 +116,6 @@ public class TracingTest {
           @Override
           public Boolean call(Integer integer) {
             assertNotNull(mockTracer.scopeManager().active());
-            //mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
             return integer % 2 == 0;
           }
         });

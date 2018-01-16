@@ -47,6 +47,7 @@ public class TracingObserverTest {
   @Before
   public void before() throws Exception {
     mockTracer.reset();
+    TracingRxJava2Utils.enableTracing(mockTracer);
   }
 
   @Test

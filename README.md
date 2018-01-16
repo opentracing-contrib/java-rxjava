@@ -11,7 +11,7 @@ pom.xml
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-rxjava-1</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 </dependency>
 ```
 
@@ -21,7 +21,7 @@ pom.xml
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-rxjava-2</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 </dependency>
 ```
 
@@ -35,6 +35,11 @@ Tracer tracer = ...
 ```
 
 ### RxJava 1
+
+```java
+// Enable Tracing via TracingRxJavaUtils
+TracingRxJavaUtils.enableTracing(tracer);
+```
 
 #### Subscriber
 
@@ -72,6 +77,11 @@ observable.subscribe(tracingSubscriber);
 ```
 
 ### RxJava 2
+
+```java
+// Enable Tracing via TracingRxJava2Utils
+TracingRxJava2Utils.enableTracing(tracer);
+```
 
 #### Observer
 
