@@ -13,6 +13,8 @@
  */
 package io.opentracing.rxjava;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import rx.Observer;
 
@@ -22,27 +24,50 @@ import rx.Observer;
 public class TracingObserverSubscriber<T> extends AbstractTracingSubscriber<T> {
 
   private final Observer<? super T> observer;
+  private final Tracer tracer;
 
   public TracingObserverSubscriber(Observer<? super T> observer, String operationName,
       Tracer tracer) {
-    super(operationName, tracer);
+    this(observer, operationName, AbstractTracingSubscriber.COMPONENT_NAME, tracer);
+  }
+
+  public TracingObserverSubscriber(Observer<? super T> observer, String operationName,
+      String componentName, Tracer tracer) {
+    super(operationName, componentName, tracer);
 
     if (observer == null) {
       throw new NullPointerException("observer is null");
     }
 
     this.observer = observer;
+    this.tracer = tracer;
   }
 
   @Override
   public void onNext(T t) {
-    observer.onNext(t);
+    Span span = getSpan();
+    Span activeSpan = tracer.activeSpan();
+    if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+      try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+        observer.onNext(t);
+      }
+    } else {
+      observer.onNext(t);
+    }
   }
 
   @Override
   public void onError(Throwable e) {
     try {
-      observer.onError(e);
+      Span span = getSpan();
+      Span activeSpan = tracer.activeSpan();
+      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+          observer.onError(e);
+        }
+      } else {
+        observer.onError(e);
+      }
     } finally {
       super.onError(e);
     }
@@ -51,7 +76,15 @@ public class TracingObserverSubscriber<T> extends AbstractTracingSubscriber<T> {
   @Override
   public void onCompleted() {
     try {
-      observer.onCompleted();
+      Span span = getSpan();
+      Span activeSpan = tracer.activeSpan();
+      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+          observer.onCompleted();
+        }
+      } else {
+        observer.onCompleted();
+      }
     } finally {
       super.onCompleted();
     }

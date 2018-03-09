@@ -27,26 +27,28 @@ class AbstractTracingSubscriber<T> extends Subscriber<T> {
   static final String COMPONENT_NAME = "rxjava-1";
 
   private final String operationName;
+  private final String componentName;
   private final Tracer tracer;
   private volatile Span span;
 
-  AbstractTracingSubscriber(String operationName, Tracer tracer) {
+  AbstractTracingSubscriber(String operationName, String componentName, Tracer tracer) {
     if (tracer == null) {
       throw new IllegalArgumentException("tracer can not be null");
     }
 
     this.operationName = operationName;
+    this.componentName = componentName;
     this.tracer = tracer;
   }
 
-  Span getSpan() {
+  public Span getSpan() {
     return span;
   }
 
   @Override
   public void onStart() {
     span = tracer.buildSpan(operationName)
-        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
+        .withTag(Tags.COMPONENT.getKey(), componentName).start();
   }
 
   @Override

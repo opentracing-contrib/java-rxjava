@@ -26,13 +26,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import io.opentracing.Scope;
+import io.opentracing.Tracer;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
+import io.opentracing.util.ThreadLocalScopeManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import io.opentracing.util.ThreadLocalScopeManager;
 import org.junit.Before;
 import org.junit.Test;
 import rx.Observable;
@@ -41,7 +41,7 @@ import rx.Subscriber;
 public class TracingSubscriberTest {
 
   private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-          MockTracer.Propagator.TEXT_MAP);
+      MockTracer.Propagator.TEXT_MAP);
 
   @Before
   public void beforeClass() {
@@ -101,7 +101,7 @@ public class TracingSubscriberTest {
   public void from_interval() {
     Observable<Long> observable = TestUtils.fromInterval(mockTracer);
 
-    Subscriber<Long> subscriber = subscriber("from_interval");
+    Subscriber<Long> subscriber = subscriber("from_interval", mockTracer);
 
     observable.subscribe(new TracingSubscriber<>(subscriber, "from_interval", mockTracer));
 
@@ -166,7 +166,7 @@ public class TracingSubscriberTest {
   private void executeSequentialObservable(final String name) {
     Observable<Integer> observable = createSequentialObservable(mockTracer);
 
-    Subscriber<Integer> subscriber = subscriber(name);
+    Subscriber<Integer> subscriber = subscriber(name, mockTracer);
 
     observable.subscribe(new TracingSubscriber<>(subscriber, "sequential", mockTracer));
   }
@@ -174,7 +174,7 @@ public class TracingSubscriberTest {
   private void executeParallelObservable(final String name) {
     Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Subscriber<Integer> subscriber = subscriber(name);
+    Subscriber<Integer> subscriber = subscriber(name, mockTracer);
 
     observable.subscribe(new TracingSubscriber<>(subscriber, "parallel", mockTracer));
   }
@@ -193,15 +193,17 @@ public class TracingSubscriberTest {
     return found.isEmpty() ? null : spans.get(0);
   }
 
-  private static <T> Subscriber<T> subscriber(final String name) {
+  private static <T> Subscriber<T> subscriber(final String name, final Tracer tracer) {
     return new Subscriber<T>() {
 
       public void onStart() {
+        assertNotNull(tracer.activeSpan());
         System.out.println(name + ": onStart");
       }
 
       @Override
       public void onCompleted() {
+        assertNotNull(tracer.activeSpan());
         System.out.println(name + ": onCompleted");
       }
 
@@ -212,6 +214,7 @@ public class TracingSubscriberTest {
 
       @Override
       public void onNext(T value) {
+        assertNotNull(tracer.activeSpan());
         System.out.println(name + ": " + value);
       }
     };

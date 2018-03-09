@@ -11,7 +11,7 @@ pom.xml
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-rxjava-1</artifactId>
-    <version>0.0.7</version>
+    <version>VERSION</version>
 </dependency>
 ```
 
@@ -21,7 +21,7 @@ pom.xml
 <dependency>
     <groupId>io.opentracing.contrib</groupId>
     <artifactId>opentracing-rxjava-2</artifactId>
-    <version>0.0.7</version>
+    <version>VERSION</version>
 </dependency>
 ```
 
