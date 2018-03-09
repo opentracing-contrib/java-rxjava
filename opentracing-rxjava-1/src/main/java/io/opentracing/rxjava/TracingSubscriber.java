@@ -13,6 +13,8 @@
  */
 package io.opentracing.rxjava;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import rx.Producer;
 import rx.Subscriber;
@@ -24,33 +26,64 @@ import rx.Subscriber;
 public class TracingSubscriber<T> extends AbstractTracingSubscriber<T> {
 
   private final Subscriber<T> subscriber;
+  private final Tracer tracer;
 
   public TracingSubscriber(Subscriber<T> subscriber, String operationName, Tracer tracer) {
-    super(operationName, tracer);
+    this(subscriber, operationName, AbstractTracingSubscriber.COMPONENT_NAME, tracer);
+  }
+
+  public TracingSubscriber(Subscriber<T> subscriber, String operationName, String componentName,
+      Tracer tracer) {
+    super(operationName, componentName, tracer);
 
     if (subscriber == null) {
       throw new IllegalArgumentException("subscriber can not be null");
     }
 
     this.subscriber = subscriber;
+    this.tracer = tracer;
     subscriber.add(this);
   }
 
   @Override
   public void onStart() {
     super.onStart();
-    subscriber.onStart();
+    Span span = getSpan();
+    Span activeSpan = tracer.activeSpan();
+    if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+      try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+        subscriber.onStart();
+      }
+    } else {
+      subscriber.onStart();
+    }
   }
 
   @Override
   public void onNext(T o) {
-    subscriber.onNext(o);
+    Span span = getSpan();
+    Span activeSpan = tracer.activeSpan();
+    if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+      try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+        subscriber.onNext(o);
+      }
+    } else {
+      subscriber.onNext(o);
+    }
   }
 
   @Override
   public void onError(Throwable t) {
     try {
-      subscriber.onError(t);
+      Span span = getSpan();
+      Span activeSpan = tracer.activeSpan();
+      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+          subscriber.onError(t);
+        }
+      } else {
+        subscriber.onError(t);
+      }
     } finally {
       super.onError(t);
     }
@@ -59,7 +92,15 @@ public class TracingSubscriber<T> extends AbstractTracingSubscriber<T> {
   @Override
   public void onCompleted() {
     try {
-      subscriber.onCompleted();
+      Span span = getSpan();
+      Span activeSpan = tracer.activeSpan();
+      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+          subscriber.onCompleted();
+        }
+      } else {
+        subscriber.onCompleted();
+      }
     } finally {
       super.onCompleted();
     }

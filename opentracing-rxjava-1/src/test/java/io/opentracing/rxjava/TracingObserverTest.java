@@ -20,8 +20,10 @@ import static io.opentracing.rxjava.TestUtils.reportedSpansSize;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import io.opentracing.Tracer;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
@@ -35,7 +37,7 @@ import rx.Observer;
 public class TracingObserverTest {
 
   private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-          MockTracer.Propagator.TEXT_MAP);
+      MockTracer.Propagator.TEXT_MAP);
 
   @Before
   public void beforeClass() {
@@ -50,7 +52,7 @@ public class TracingObserverTest {
   @Test
   public void sequential() {
     Observable<Integer> observable = createSequentialObservable(mockTracer);
-    Observer<Integer> observer = observer("sequential");
+    Observer<Integer> observer = observer("sequential", mockTracer);
 
     TracingObserverSubscriber<Integer> tracingObserverSubscriber =
         new TracingObserverSubscriber<>(observer, "sequential", mockTracer);
@@ -68,7 +70,7 @@ public class TracingObserverTest {
   public void parallel() {
     Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Observer<Integer> observer = observer("parallel");
+    Observer<Integer> observer = observer("parallel", mockTracer);
 
     TracingObserverSubscriber<Integer> tracingObserverSubscriber =
         new TracingObserverSubscriber<>(observer, "parallel", mockTracer);
@@ -84,10 +86,11 @@ public class TracingObserverTest {
     assertNull(mockTracer.scopeManager().active());
   }
 
-  private static <T> Observer<T> observer(final String name) {
+  private static <T> Observer<T> observer(final String name, final Tracer tracer) {
     return new Observer<T>() {
       @Override
       public void onCompleted() {
+        assertNotNull(tracer.activeSpan());
         System.out.println(name + ": onCompleted");
       }
 
@@ -98,6 +101,7 @@ public class TracingObserverTest {
 
       @Override
       public void onNext(T t) {
+        assertNotNull(tracer.activeSpan());
         System.out.println(name + ": " + t);
       }
     };

@@ -20,8 +20,10 @@ import static io.opentracing.rxjava.TestUtils.reportedSpansSize;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import io.opentracing.Tracer;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
@@ -35,7 +37,7 @@ import rx.functions.Action1;
 public class TracingActionTest {
 
   private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-          MockTracer.Propagator.TEXT_MAP);
+      MockTracer.Propagator.TEXT_MAP);
 
   @Before
   public void beforeClass() {
@@ -51,7 +53,7 @@ public class TracingActionTest {
   public void sequential() {
     Observable<Integer> observable = createSequentialObservable(mockTracer);
 
-    Action1<Integer> onNext = action1();
+    Action1<Integer> onNext = action1(mockTracer);
 
     observable.subscribe(new TracingActionSubscriber<>(onNext, "sequential", mockTracer));
 
@@ -66,7 +68,7 @@ public class TracingActionTest {
   public void parallel() {
     Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Action1<Integer> onNext = action1();
+    Action1<Integer> onNext = action1(mockTracer);
 
     observable.subscribe(new TracingActionSubscriber<>(onNext, "parallel", mockTracer));
 
@@ -83,7 +85,7 @@ public class TracingActionTest {
   public void fromInterval() {
     Observable<Long> observable = TestUtils.fromInterval(mockTracer);
 
-    Action1<Long> onNext = action1();
+    Action1<Long> onNext = action1(mockTracer);
 
     observable.subscribe(new TracingActionSubscriber<>(onNext, "from_interval", mockTracer));
 
@@ -96,10 +98,11 @@ public class TracingActionTest {
     assertNull(mockTracer.scopeManager().active());
   }
 
-  private static <T> Action1<T> action1() {
+  private static <T> Action1<T> action1(final Tracer tracer) {
     return new Action1<T>() {
       @Override
       public void call(T value) {
+        assertNotNull(tracer.activeSpan());
         System.out.println(value);
       }
     };

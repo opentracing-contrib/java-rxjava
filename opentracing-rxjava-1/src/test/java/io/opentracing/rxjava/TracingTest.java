@@ -24,11 +24,10 @@ import static org.junit.Assert.assertNull;
 import io.opentracing.Scope;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
+import io.opentracing.util.ThreadLocalScopeManager;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import io.opentracing.util.ThreadLocalScopeManager;
 import org.junit.Before;
 import org.junit.Test;
 import rx.Observable;
@@ -39,7 +38,7 @@ import rx.schedulers.Schedulers;
 public class TracingTest {
 
   private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-          MockTracer.Propagator.TEXT_MAP);
+      MockTracer.Propagator.TEXT_MAP);
 
   @Before
   public void beforeClass() {
