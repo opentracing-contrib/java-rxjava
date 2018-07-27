@@ -105,6 +105,10 @@ TracingConsumer<Integer> tracingConsumer = new TracingConsumer(onNext, "consumer
 observable.subscribe(tracingConsumer);
 ```
 
+## License
+
+[Apache 2.0 License](./LICENSE).
+
 [ci-img]: https://travis-ci.org/opentracing-contrib/java-rxjava.svg?branch=master
 [ci]: https://travis-ci.org/opentracing-contrib/java-rxjava
 [cov-img]: https://coveralls.io/repos/github/opentracing-contrib/java-rxjava/badge.svg?branch=master
