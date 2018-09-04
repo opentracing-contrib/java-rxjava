@@ -16,6 +16,7 @@ package io.opentracing.rxjava;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -26,6 +27,13 @@ import rx.observers.SafeSubscriber;
 import rx.plugins.RxJavaHooks;
 
 public class TracingRxJavaUtils {
+
+  /**
+   * GlobalTracer is used to get tracer
+   */
+  public static void enableTracing() {
+    enableTracing(GlobalTracer.get());
+  }
 
   @SuppressWarnings("unchecked")
   public static void enableTracing(final Tracer tracer) {
