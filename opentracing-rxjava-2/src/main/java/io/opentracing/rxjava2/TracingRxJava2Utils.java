@@ -15,11 +15,19 @@ package io.opentracing.rxjava2;
 
 
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import io.reactivex.functions.Function;
 import io.reactivex.plugins.RxJavaPlugins;
 
 
 public class TracingRxJava2Utils {
+
+  /**
+   * GlobalTracer is used to get tracer
+   */
+  public static void enableTracing() {
+    enableTracing(GlobalTracer.get());
+  }
 
   public static void enableTracing(final Tracer tracer) {
 
