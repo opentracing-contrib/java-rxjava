@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,15 +34,15 @@ class TestUtils {
     return Observable.range(1, 10)
         .map(new Function<Integer, Integer>() {
           @Override
-          public Integer apply(Integer integer) throws Exception {
-            assertNotNull(mockTracer.scopeManager().active());
+          public Integer apply(Integer integer) {
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer * 3;
           }
         })
         .filter(new Predicate<Integer>() {
           @Override
-          public boolean test(Integer integer) throws Exception {
-            assertNotNull(mockTracer.scopeManager().active());
+          public boolean test(Integer integer) {
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer % 2 == 0;
           }
         });
@@ -54,17 +54,17 @@ class TestUtils {
         .observeOn(Schedulers.computation())
         .map(new Function<Integer, Integer>() {
           @Override
-          public Integer apply(Integer integer) throws Exception {
+          public Integer apply(Integer integer) {
             sleep();
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer * 3;
           }
         })
         .filter(new Predicate<Integer>() {
           @Override
-          public boolean test(Integer integer) throws Exception {
+          public boolean test(Integer integer) {
             sleep();
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer % 2 == 0;
           }
         });
@@ -88,7 +88,7 @@ class TestUtils {
   static Callable<Integer> reportedSpansSize(final MockTracer mockTracer) {
     return new Callable<Integer>() {
       @Override
-      public Integer call() throws Exception {
+      public Integer call() {
         return mockTracer.finishedSpans().size();
       }
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,18 +14,21 @@
 package io.opentracing.rxjava2;
 
 import io.opentracing.Scope;
+import io.opentracing.Span;
 
 class SpanHolder {
 
   private static final SpanHolder holder = new SpanHolder();
   private final ThreadLocal<Scope> scope = new ThreadLocal<>();
+  private final ThreadLocal<Span> span = new ThreadLocal<>();
 
-  static Scope get() {
-    return holder.scope.get();
+  static Span getSpan() {
+    return holder.span.get();
   }
 
-  static void set(Scope scope) {
+  static void set(Scope scope, Span span) {
     holder.scope.set(scope);
+    holder.span.set(span);
   }
 
   static void clear() {
@@ -34,6 +37,7 @@ class SpanHolder {
       scope.close();
     }
     holder.scope.remove();
+    holder.span.remove();
   }
 
 }

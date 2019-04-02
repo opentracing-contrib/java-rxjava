@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,10 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import io.opentracing.Tracer;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.ThreadLocalScopeManager;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -36,8 +34,7 @@ import rx.Observer;
 
 public class TracingObserverTest {
 
-  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-      MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer();
 
   @Before
   public void beforeClass() {
@@ -52,7 +49,7 @@ public class TracingObserverTest {
   @Test
   public void sequential() {
     Observable<Integer> observable = createSequentialObservable(mockTracer);
-    Observer<Integer> observer = observer("sequential", mockTracer);
+    Observer<Integer> observer = observer("sequential");
 
     TracingObserverSubscriber<Integer> tracingObserverSubscriber =
         new TracingObserverSubscriber<>(observer, "sequential", mockTracer);
@@ -63,14 +60,14 @@ public class TracingObserverTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   @Test
   public void parallel() {
     Observable<Integer> observable = createParallelObservable(mockTracer);
 
-    Observer<Integer> observer = observer("parallel", mockTracer);
+    Observer<Integer> observer = observer("parallel");
 
     TracingObserverSubscriber<Integer> tracingObserverSubscriber =
         new TracingObserverSubscriber<>(observer, "parallel", mockTracer);
@@ -83,14 +80,14 @@ public class TracingObserverTest {
     assertEquals(1, spans.size());
     checkSpans(spans, spans.get(0).context().traceId());
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
-  private static <T> Observer<T> observer(final String name, final Tracer tracer) {
+  private static <T> Observer<T> observer(final String name) {
     return new Observer<T>() {
       @Override
       public void onCompleted() {
-        assertNotNull(tracer.activeSpan());
+        assertNotNull(mockTracer.activeSpan());
         System.out.println(name + ": onCompleted");
       }
 
@@ -101,7 +98,7 @@ public class TracingObserverTest {
 
       @Override
       public void onNext(T t) {
-        assertNotNull(tracer.activeSpan());
+        assertNotNull(mockTracer.activeSpan());
         System.out.println(name + ": " + t);
       }
     };

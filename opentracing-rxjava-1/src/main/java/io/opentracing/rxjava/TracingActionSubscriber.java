@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -88,8 +88,8 @@ public class TracingActionSubscriber<T> extends AbstractTracingSubscriber<T> {
   public void onNext(T t) {
     Span span = getSpan();
     Span activeSpan = tracer.activeSpan();
-    if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
-      try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+    if (span != null && (!span.equals(activeSpan))) {
+      try (Scope ignore = tracer.scopeManager().activate(getSpan())) {
         onNext.call(t);
       }
     } else {
@@ -102,8 +102,8 @@ public class TracingActionSubscriber<T> extends AbstractTracingSubscriber<T> {
     try {
       Span span = getSpan();
       Span activeSpan = tracer.activeSpan();
-      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
-        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+      if (span != null && (!span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan())) {
           onError.call(e);
         }
       } else {
@@ -119,8 +119,8 @@ public class TracingActionSubscriber<T> extends AbstractTracingSubscriber<T> {
     try {
       Span span = getSpan();
       Span activeSpan = tracer.activeSpan();
-      if (span != null && (activeSpan == null || !span.equals(activeSpan))) {
-        try (Scope ignore = tracer.scopeManager().activate(getSpan(), false)) {
+      if (span != null && (!span.equals(activeSpan))) {
+        try (Scope ignore = tracer.scopeManager().activate(getSpan())) {
           onCompleted.call();
         }
       } else {

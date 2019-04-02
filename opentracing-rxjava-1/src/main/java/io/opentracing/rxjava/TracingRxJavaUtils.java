@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -60,7 +60,7 @@ public class TracingRxJavaUtils {
               if (subscriber2 instanceof AbstractTracingSubscriber) {
                 AbstractTracingSubscriber tracingSubscriber = (AbstractTracingSubscriber) subscriber2;
                 Span span = tracingSubscriber.getSpan();
-                scope = tracer.scopeManager().activate(span, false);
+                scope = tracer.scopeManager().activate(span);
               } /* else if (tracer.scopeManager().active() != null) {
                 // if there is no parent don't create new span
 

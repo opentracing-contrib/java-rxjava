@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,7 +37,7 @@ class TestUtils {
     }
   }
 
-  static void sleep() {
+  private static void sleep() {
     try {
       TimeUnit.MILLISECONDS.sleep(200L);
     } catch (InterruptedException e) {
@@ -48,7 +48,7 @@ class TestUtils {
   static Callable<Integer> reportedSpansSize(final MockTracer mockTracer) {
     return new Callable<Integer>() {
       @Override
-      public Integer call() throws Exception {
+      public Integer call() {
         return mockTracer.finishedSpans().size();
       }
     };
@@ -59,7 +59,7 @@ class TestUtils {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer * 3;
           }
         });
@@ -73,14 +73,14 @@ class TestUtils {
           @Override
           public Integer call(Integer integer) {
             sleep();
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer * 3;
           }
         }).filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
             sleep();
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer % 2 == 0;
           }
         });
@@ -91,7 +91,7 @@ class TestUtils {
         .map(new Func1<Long, Long>() {
           @Override
           public Long call(Long value) {
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return value * 2;
           }
         })

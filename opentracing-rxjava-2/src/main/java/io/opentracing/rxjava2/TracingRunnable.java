@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,10 +31,10 @@ class TracingRunnable implements Runnable {
   }
 
   private Span getSpan(Tracer tracer) {
-    if (SpanHolder.get() != null) {
-      Scope scope = SpanHolder.get();
+    if (SpanHolder.getSpan() != null) {
+      Span span = SpanHolder.getSpan();
       SpanHolder.clear();
-      return scope.span();
+      return span;
     }
     return tracer.activeSpan();
   }
@@ -43,7 +43,7 @@ class TracingRunnable implements Runnable {
   public void run() {
     Scope scope = null;
     if (span != null) {
-      scope = tracer.scopeManager().activate(span, false);
+      scope = tracer.scopeManager().activate(span);
     }
     try {
       runnable.run();

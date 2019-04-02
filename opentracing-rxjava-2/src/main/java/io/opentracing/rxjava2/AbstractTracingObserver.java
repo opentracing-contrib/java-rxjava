@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@ class AbstractTracingObserver<T> implements Observer<T> {
   static final String COMPONENT_NAME = "rxjava-2";
 
   private final String operationName;
-  protected final Tracer tracer;
+  private final Tracer tracer;
   private volatile Span span;
 
   AbstractTracingObserver(String operationName, Tracer tracer) {
@@ -39,10 +39,10 @@ class AbstractTracingObserver<T> implements Observer<T> {
 
   @Override
   public void onSubscribe(Disposable d) {
-    Scope scope = tracer.buildSpan(operationName)
-        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).startActive(false);
-    SpanHolder.set(scope);
-    span = scope.span();
+    span = tracer.buildSpan(operationName)
+        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
+    Scope scope = tracer.activateSpan(span);
+    SpanHolder.set(scope, span);
   }
 
   @Override

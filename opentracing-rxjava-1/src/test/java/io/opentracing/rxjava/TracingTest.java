@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,9 +22,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.ThreadLocalScopeManager;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +37,7 @@ import rx.schedulers.Schedulers;
 
 public class TracingTest {
 
-  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-      MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer();
 
   @Before
   public void beforeClass() {
@@ -59,8 +58,8 @@ public class TracingTest {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            assertNotNull(mockTracer.scopeManager().active());
-            mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
+            assertNotNull(mockTracer.scopeManager().activeSpan());
+            mockTracer.scopeManager().activeSpan().setTag(String.valueOf(integer), integer);
             return integer * 2;
           }
         })
@@ -75,7 +74,7 @@ public class TracingTest {
     Action1<Integer> action1 = new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
-        assertNotNull(mockTracer.scopeManager().active());
+        assertNotNull(mockTracer.scopeManager().activeSpan());
         System.out.println(integer);
       }
     };
@@ -91,7 +90,7 @@ public class TracingTest {
     assertEquals(10, spans.get(0).tags().get(String.valueOf(10)));
     assertEquals(10, spans.get(1).tags().get(String.valueOf(10)));
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   @Test
@@ -105,8 +104,8 @@ public class TracingTest {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            assertNotNull(mockTracer.scopeManager().active());
-            mockTracer.scopeManager().active().span().setTag(String.valueOf(integer), integer);
+            assertNotNull(mockTracer.scopeManager().activeSpan());
+            mockTracer.scopeManager().activeSpan().setTag(String.valueOf(integer), integer);
             return integer * 2;
           }
         })
@@ -114,7 +113,7 @@ public class TracingTest {
         .filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
-            assertNotNull(mockTracer.scopeManager().active());
+            assertNotNull(mockTracer.scopeManager().activeSpan());
             return integer % 2 == 0;
           }
         });
@@ -122,7 +121,7 @@ public class TracingTest {
     Action1<Integer> action1 = new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
-        assertNotNull(mockTracer.scopeManager().active());
+        assertNotNull(mockTracer.scopeManager().activeSpan());
         System.out.println(integer);
       }
     };
@@ -140,7 +139,7 @@ public class TracingTest {
     assertEquals(10, spans.get(1).tags().get(String.valueOf(10)));
     assertEquals(10, spans.get(2).tags().get(String.valueOf(10)));
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   @Test
@@ -154,14 +153,14 @@ public class TracingTest {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            assertNull(mockTracer.scopeManager().active());
+            assertNull(mockTracer.scopeManager().activeSpan());
             return integer * 2;
           }
         })
         .filter(new Func1<Integer, Boolean>() {
           @Override
           public Boolean call(Integer integer) {
-            assertNull(mockTracer.scopeManager().active());
+            assertNull(mockTracer.scopeManager().activeSpan());
             latch.countDown();
             return integer % 2 == 0;
 
@@ -171,7 +170,7 @@ public class TracingTest {
     Action1<Integer> action1 = new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
-        assertNull(mockTracer.scopeManager().active());
+        assertNull(mockTracer.scopeManager().activeSpan());
         System.out.println(integer);
       }
     };
@@ -182,7 +181,7 @@ public class TracingTest {
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(0, spans.size());
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   @Test
@@ -194,9 +193,9 @@ public class TracingTest {
         .map(new Func1<Integer, Integer>() {
           @Override
           public Integer call(Integer integer) {
-            Scope scope2 = mockTracer.scopeManager().active();
-            assertNotNull(scope2);
-            scope2.span().setTag(String.valueOf(integer), integer);
+            Span span2 = mockTracer.scopeManager().activeSpan();
+            assertNotNull(span2);
+            span2.setTag(String.valueOf(integer), integer);
             return integer * 2;
           }
         }).filter(new Func1<Integer, Boolean>() {
@@ -210,7 +209,7 @@ public class TracingTest {
     Action1<Integer> action1 = new Action1<Integer>() {
       @Override
       public void call(Integer integer) {
-        assertNotNull(mockTracer.scopeManager().active());
+        assertNotNull(mockTracer.scopeManager().activeSpan());
         System.out.println(integer);
         latch.countDown();
       }
@@ -226,6 +225,6 @@ public class TracingTest {
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(1, spans.size());
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 }

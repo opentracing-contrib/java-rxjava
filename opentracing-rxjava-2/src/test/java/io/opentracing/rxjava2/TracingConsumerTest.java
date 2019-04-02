@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenTracing Authors
+ * Copyright 2017-2019 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import io.opentracing.util.ThreadLocalScopeManager;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 import java.util.ArrayList;
@@ -35,11 +34,10 @@ import org.junit.Test;
 
 public class TracingConsumerTest {
 
-  private static final MockTracer mockTracer = new MockTracer(new ThreadLocalScopeManager(),
-      MockTracer.Propagator.TEXT_MAP);
+  private static final MockTracer mockTracer = new MockTracer();
 
   @Before
-  public void before() throws Exception {
+  public void before() {
     mockTracer.reset();
     TracingRxJava2Utils.enableTracing(mockTracer);
   }
@@ -57,7 +55,7 @@ public class TracingConsumerTest {
     assertEquals(1, spans.size());
     checkSpans(spans);
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   @Test
@@ -76,13 +74,13 @@ public class TracingConsumerTest {
     assertEquals(1, spans.size());
     checkSpans(spans);
 
-    assertNull(mockTracer.scopeManager().active());
+    assertNull(mockTracer.scopeManager().activeSpan());
   }
 
   private <T> Consumer<T> consumer(final List<T> result) {
     return new Consumer<T>() {
       @Override
-      public void accept(T value) throws Exception {
+      public void accept(T value) {
         System.out.println(value);
         result.add(value);
       }
