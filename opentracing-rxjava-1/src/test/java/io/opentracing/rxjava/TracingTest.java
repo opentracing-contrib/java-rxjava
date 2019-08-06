@@ -96,7 +96,8 @@ public class TracingTest {
   @Test
   public void traced_with_parent() {
 
-    Scope scope = mockTracer.buildSpan("parent").startActive(true);
+    final MockSpan parent = mockTracer.buildSpan("parent").start();
+    Scope scope = mockTracer.activateSpan(parent);
 
     Observable<Integer> ob = Observable.range(1, 10)
         .observeOn(Schedulers.io())
@@ -130,6 +131,7 @@ public class TracingTest {
     ob.subscribe(new TracingActionSubscriber<>(action1, "test2", mockTracer));
 
     scope.close();
+    parent.finish();
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(3));
 
@@ -215,11 +217,13 @@ public class TracingTest {
       }
     };
 
-    final Scope scope = mockTracer.buildSpan("parent").startActive(true);
+    final MockSpan parent = mockTracer.buildSpan("parent").start();
+    final Scope scope = mockTracer.activateSpan(parent);
     ob.subscribe(action1);
 
     latch.await(10, TimeUnit.SECONDS);
     scope.close();
+    parent.finish();
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(1));
     List<MockSpan> spans = mockTracer.finishedSpans();
