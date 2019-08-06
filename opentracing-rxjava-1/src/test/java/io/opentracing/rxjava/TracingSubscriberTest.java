@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNull;
 import io.opentracing.Scope;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -76,15 +75,16 @@ public class TracingSubscriberTest {
 
   @Test
   public void sequential_with_parent() {
-    try (Scope ignored = mockTracer.buildSpan("parent").startActive(true)) {
+    final MockSpan parent = mockTracer.buildSpan("parent").start();
+    try (Scope ignored = mockTracer.activateSpan(parent)) {
       executeSequentialObservable("sequential_with_parent first");
       executeSequentialObservable("sequential_with_parent second");
     }
+    parent.finish();
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
 
-    MockSpan parent = getOneSpanByOperationName(spans, "parent");
     assertNotNull(parent);
 
     for (MockSpan span : spans) {
@@ -140,17 +140,17 @@ public class TracingSubscriberTest {
 
   @Test
   public void parallel_with_parent() {
-    try (Scope ignored = mockTracer.buildSpan("parallel_parent")
-        .startActive(true)) {
+    final MockSpan parent = mockTracer.buildSpan("parallel_parent").start();
+    try (Scope ignored = mockTracer.activateSpan(parent)) {
       executeParallelObservable("first_parallel_with_parent");
       executeParallelObservable("second_parallel_with_parent");
     }
+    parent.finish();
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(3));
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
 
-    MockSpan parent = getOneSpanByOperationName(spans, "parallel_parent");
     assertNotNull(parent);
 
     for (MockSpan span : spans) {
@@ -174,20 +174,6 @@ public class TracingSubscriberTest {
     Subscriber<Integer> subscriber = subscriber(name);
 
     observable.subscribe(new TracingSubscriber<>(subscriber, "parallel", mockTracer));
-  }
-
-  private MockSpan getOneSpanByOperationName(List<MockSpan> spans, String operationName) {
-    List<MockSpan> found = new ArrayList<>();
-    for (MockSpan span : spans) {
-      if (operationName.equals(span.operationName())) {
-        found.add(span);
-      }
-    }
-    if (found.size() > 1) {
-      throw new RuntimeException(
-          "Ups, too many spans (" + found.size() + ") with operation name " + operationName);
-    }
-    return found.isEmpty() ? null : spans.get(0);
   }
 
   private static <T> Subscriber<T> subscriber(final String name) {

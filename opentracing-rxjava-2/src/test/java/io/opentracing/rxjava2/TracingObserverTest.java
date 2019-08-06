@@ -81,17 +81,18 @@ public class TracingObserverTest {
   @Test
   public void sequential_with_parent() {
     List<Integer> result = new ArrayList<>();
-    try (Scope ignored = mockTracer.buildSpan("parent").startActive(true)) {
+    final MockSpan parent = mockTracer.buildSpan("parent").start();
+    try (Scope ignored = mockTracer.activateSpan(parent)) {
       executeSequentialObservable("sequential_with_parent first", result);
       executeSequentialObservable("sequential_with_parent second", result);
     }
+    parent.finish();
 
     assertEquals(10, result.size());
 
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
 
-    MockSpan parent = getOneSpanByOperationName(spans, "parent");
     assertNotNull(parent);
 
     for (MockSpan span : spans) {
@@ -138,10 +139,12 @@ public class TracingObserverTest {
   @Test
   public void parallel_with_parent() {
     List<Integer> result = new CopyOnWriteArrayList<>();
-    try (Scope ignored = mockTracer.buildSpan("parallel_parent").startActive(true)) {
+    final MockSpan parent = mockTracer.buildSpan("parallel_parent").start();
+    try (Scope ignored = mockTracer.activateSpan(parent)) {
       executeParallelObservable("first_parallel_with_parent", result);
       executeParallelObservable("second_parallel_with_parent", result);
     }
+    parent.finish();
 
     await().atMost(15, TimeUnit.SECONDS).until(reportedSpansSize(mockTracer), equalTo(3));
 
@@ -150,7 +153,6 @@ public class TracingObserverTest {
     List<MockSpan> spans = mockTracer.finishedSpans();
     assertEquals(3, spans.size());
 
-    MockSpan parent = getOneSpanByOperationName(spans, "parallel_parent");
     assertNotNull(parent);
 
     for (MockSpan span : spans) {
@@ -202,17 +204,4 @@ public class TracingObserverTest {
     };
   }
 
-  private MockSpan getOneSpanByOperationName(List<MockSpan> spans, String operationName) {
-    List<MockSpan> found = new ArrayList<>();
-    for (MockSpan span : spans) {
-      if (operationName.equals(span.operationName())) {
-        found.add(span);
-      }
-    }
-    if (found.size() > 1) {
-      throw new RuntimeException(
-          "Ups, too many spans (" + found.size() + ") with operation name " + operationName);
-    }
-    return found.isEmpty() ? null : spans.get(0);
-  }
 }
