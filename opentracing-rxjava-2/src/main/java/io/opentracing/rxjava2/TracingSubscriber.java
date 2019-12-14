@@ -23,6 +23,9 @@ import io.reactivex.internal.operators.flowable.FlowableInternalHelper;
 import io.reactivex.internal.subscribers.LambdaSubscriber;
 import org.reactivestreams.Subscription;
 
+/**
+ * Tracing decorator for RxJava {@link FlowableSubscriber}
+ */
 public class TracingSubscriber<T> implements FlowableSubscriber<T>, Subscription {
 
     private Subscription upstream;
