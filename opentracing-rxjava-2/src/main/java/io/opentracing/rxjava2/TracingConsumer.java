@@ -14,6 +14,7 @@
 package io.opentracing.rxjava2;
 
 import io.opentracing.Tracer;
+import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
@@ -23,8 +24,9 @@ import io.reactivex.internal.observers.LambdaObserver;
 /**
  * Tracing decorator for RxJava {@link Consumer}
  */
-public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Disposable {
+public class TracingConsumer<T> implements Observer<T>, Disposable {
 
+  private final RxTracer rxTracer;
   private final LambdaObserver<T> lambdaObserver;
 
   public TracingConsumer(String operationName, Tracer tracer) {
@@ -50,7 +52,7 @@ public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Di
       Action onComplete, Consumer<? super Disposable> onSubscribe, String operationName,
       Tracer tracer) {
 
-    super(operationName, tracer);
+    rxTracer = new RxTracer(operationName, tracer);
 
     requireNonNull(onNext, "onNext can not be null");
     requireNonNull(onError, "onError can not be null");
@@ -66,7 +68,7 @@ public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Di
     try {
       lambdaObserver.onSubscribe(d);
     } finally {
-      super.onSubscribe(d);
+      rxTracer.onSubscribe();
     }
   }
 
@@ -80,9 +82,8 @@ public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Di
     try {
       lambdaObserver.onError(t);
     } finally {
-      super.onError(t);
+      rxTracer.onError(t);
     }
-
   }
 
   @Override
@@ -90,7 +91,7 @@ public class TracingConsumer<T> extends AbstractTracingObserver<T> implements Di
     try {
       lambdaObserver.onComplete();
     } finally {
-      super.onComplete();
+      rxTracer.onComplete();
     }
   }
 

@@ -20,14 +20,14 @@ import io.reactivex.disposables.Disposable;
 /**
  * Tracing decorator for RxJava {@link Observer}
  */
-public class TracingObserver<T> extends AbstractTracingObserver<T> implements Disposable {
+public class TracingObserver<T> implements Observer<T>, Disposable {
 
   private Disposable upstream;
+  private final RxTracer rxTracer;
   private final Observer<T> observer;
 
-
   public TracingObserver(Observer<T> observer, String operationName, Tracer tracer) {
-    super(operationName, tracer);
+    rxTracer = new RxTracer(operationName, tracer);
     this.observer = observer;
   }
 
@@ -47,7 +47,7 @@ public class TracingObserver<T> extends AbstractTracingObserver<T> implements Di
     try {
       observer.onSubscribe(this);
     } finally {
-      super.onSubscribe(d);
+      rxTracer.onSubscribe();
     }
   }
 
@@ -61,7 +61,7 @@ public class TracingObserver<T> extends AbstractTracingObserver<T> implements Di
     try {
       observer.onError(t);
     } finally {
-      super.onError(t);
+      rxTracer.onError(t);
     }
   }
 
@@ -70,7 +70,7 @@ public class TracingObserver<T> extends AbstractTracingObserver<T> implements Di
     try {
       observer.onComplete();
     } finally {
-      super.onComplete();
+      rxTracer.onComplete();
     }
   }
 }
