@@ -13,20 +13,23 @@
  */
 package io.opentracing.rxjava2;
 
-import static io.opentracing.rxjava2.AbstractTracingObserver.COMPONENT_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
+
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import static io.opentracing.rxjava2.RxTracer.COMPONENT_NAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 class TestUtils {
 
@@ -68,6 +71,14 @@ class TestUtils {
             return integer % 2 == 0;
           }
         });
+  }
+
+  static Flowable<Integer> createSequentialFlowable(final MockTracer mockTracer) {
+    return createSequentialObservable(mockTracer).toFlowable(BackpressureStrategy.ERROR);
+  }
+
+  static Flowable<Integer> createParallelFlowable(final MockTracer mockTracer) {
+    return createParallelObservable(mockTracer).toFlowable(BackpressureStrategy.ERROR);
   }
 
   private static void sleep() {

@@ -17,14 +17,13 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-class AbstractTracingObserver<T> implements Observer<T> {
+final class RxTracer {
 
   static final String COMPONENT_NAME = "rxjava-2";
 
@@ -32,32 +31,25 @@ class AbstractTracingObserver<T> implements Observer<T> {
   private final Tracer tracer;
   private volatile Span span;
 
-  AbstractTracingObserver(String operationName, Tracer tracer) {
+  RxTracer(String operationName, Tracer tracer) {
     this.operationName = operationName;
     this.tracer = tracer;
   }
 
-  @Override
-  public void onSubscribe(Disposable d) {
+  void onSubscribe() {
     span = tracer.buildSpan(operationName)
-        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
+            .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
     Scope scope = tracer.activateSpan(span);
     SpanHolder.set(scope, span);
   }
 
-  @Override
-  public void onNext(T t) {
-  }
-
-  @Override
-  public void onError(Throwable t) {
+  void onError(Throwable t) {
     onError(t, span);
     span.finish();
     SpanHolder.clear();
   }
 
-  @Override
-  public void onComplete() {
+  void onComplete() {
     span.finish();
     SpanHolder.clear();
   }
