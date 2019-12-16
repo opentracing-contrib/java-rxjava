@@ -28,112 +28,115 @@ import org.reactivestreams.Subscription;
  */
 public class TracingSubscriber<T> implements FlowableSubscriber<T>, Subscription {
 
-    private Subscription upstream;
-    private final RxTracer rxTracer;
-    private final FlowableSubscriber<T> subscriber;
+  private Subscription upstream;
+  private final RxTracer rxTracer;
+  private final FlowableSubscriber<T> subscriber;
 
-    private TracingSubscriber(FlowableSubscriber<T> subscriber, String operationName, Tracer tracer) {
-        rxTracer = new RxTracer(operationName, tracer);
-        this.subscriber = subscriber;
+  private TracingSubscriber(FlowableSubscriber<T> subscriber, String operationName, Tracer tracer) {
+    rxTracer = new RxTracer(operationName, tracer);
+    this.subscriber = subscriber;
+  }
+
+  @Override
+  public void request(long l) {
+    upstream.request(l);
+  }
+
+  @Override
+  public void cancel() {
+    upstream.cancel();
+  }
+
+  @Override
+  public void onSubscribe(Subscription s) {
+    upstream = s;
+    try {
+      subscriber.onSubscribe(this);
+    } finally {
+      rxTracer.onSubscribe();
     }
+  }
 
-    @Override
-    public void request(long l) {
-        upstream.request(l);
+  @Override
+  public void onNext(T o) {
+    subscriber.onNext(o);
+  }
+
+  @Override
+  public void onError(Throwable t) {
+    try {
+      subscriber.onError(t);
+    } finally {
+      rxTracer.onError(t);
     }
+  }
 
-    @Override
-    public void cancel() {
-        upstream.cancel();
+  @Override
+  public void onComplete() {
+    try {
+      subscriber.onComplete();
+    } finally {
+      rxTracer.onComplete();
     }
+  }
 
-    @Override
-    public void onSubscribe(Subscription s) {
-        upstream = s;
-        try {
-            subscriber.onSubscribe(this);
-        } finally {
-            rxTracer.onSubscribe();
-        }
-    }
+  public static <T> FlowableSubscriber<T> create(
+      String operationName,
+      Tracer tracer) {
+    return create(Functions.emptyConsumer(), Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION,
+        FlowableInternalHelper.RequestMax.INSTANCE, operationName, tracer);
+  }
 
-    @Override
-    public void onNext(T o) {
-        subscriber.onNext(o);
-    }
+  public static <T> FlowableSubscriber<T> create(
+      Consumer<? super T> onNext,
+      String operationName,
+      Tracer tracer) {
+    return create(onNext, Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION,
+        FlowableInternalHelper.RequestMax.INSTANCE, operationName, tracer);
+  }
 
-    @Override
-    public void onError(Throwable t) {
-        try {
-            subscriber.onError(t);
-        } finally {
-            rxTracer.onError(t);
-        }
-    }
+  public static <T> FlowableSubscriber<T> create(
+      Consumer<? super T> onNext,
+      Consumer<? super Throwable> onError,
+      String operationName,
+      Tracer tracer) {
+    return create(onNext, onError, Functions.EMPTY_ACTION,
+        FlowableInternalHelper.RequestMax.INSTANCE,
+        operationName, tracer);
+  }
 
-    @Override
-    public void onComplete() {
-        try {
-            subscriber.onComplete();
-        } finally {
-            rxTracer.onComplete();
-        }
-    }
+  public static <T> FlowableSubscriber<T> create(
+      Consumer<? super T> onNext,
+      Consumer<? super Throwable> onError,
+      Action onComplete,
+      String operationName,
+      Tracer tracer) {
+    return create(onNext, onError, onComplete, FlowableInternalHelper.RequestMax.INSTANCE,
+        operationName, tracer);
+  }
 
-    public static <T> FlowableSubscriber<T> create(
-            String operationName,
-            Tracer tracer) {
-        return create(Functions.emptyConsumer(), Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION,
-                FlowableInternalHelper.RequestMax.INSTANCE, operationName, tracer);
-    }
+  public static <T> FlowableSubscriber<T> create(
+      Consumer<? super T> onNext,
+      Consumer<? super Throwable> onError,
+      Action onComplete,
+      Consumer<? super Subscription> onSubscribe,
+      String operationName,
+      Tracer tracer) {
+    ObjectHelper.requireNonNull(onNext, "onNext is null");
+    ObjectHelper.requireNonNull(onError, "onError is null");
+    ObjectHelper.requireNonNull(onComplete, "onComplete is null");
+    ObjectHelper.requireNonNull(onSubscribe, "onSubscribe is null");
+    ObjectHelper.requireNonNull(tracer, "tracer can not be null");
 
-    public static <T> FlowableSubscriber<T> create(
-            Consumer<? super T> onNext,
-            String operationName,
-            Tracer tracer) {
-        return create(onNext, Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION,
-                FlowableInternalHelper.RequestMax.INSTANCE, operationName, tracer);
-    }
+    return create(new LambdaSubscriber<>(onNext, onError, onComplete, onSubscribe), operationName,
+        tracer);
+  }
 
-    public static <T> FlowableSubscriber<T> create(
-            Consumer<? super T> onNext,
-            Consumer<? super Throwable> onError,
-            String operationName,
-            Tracer tracer) {
-        return create(onNext, onError, Functions.EMPTY_ACTION, FlowableInternalHelper.RequestMax.INSTANCE,
-                operationName, tracer);
-    }
+  public static <T> FlowableSubscriber<T> create(
+      FlowableSubscriber<T> subscriber,
+      String operationName,
+      Tracer tracer) {
 
-    public static <T> FlowableSubscriber<T> create(
-            Consumer<? super T> onNext,
-            Consumer<? super Throwable> onError,
-            Action onComplete,
-            String operationName,
-            Tracer tracer) {
-        return create(onNext, onError, onComplete, FlowableInternalHelper.RequestMax.INSTANCE, operationName, tracer);
-    }
-
-    public static <T> FlowableSubscriber<T> create(
-            Consumer<? super T> onNext,
-            Consumer<? super Throwable> onError,
-            Action onComplete,
-            Consumer<? super Subscription> onSubscribe,
-            String operationName,
-            Tracer tracer) {
-        ObjectHelper.requireNonNull(onNext, "onNext is null");
-        ObjectHelper.requireNonNull(onError, "onError is null");
-        ObjectHelper.requireNonNull(onComplete, "onComplete is null");
-        ObjectHelper.requireNonNull(onSubscribe, "onSubscribe is null");
-        ObjectHelper.requireNonNull(tracer, "tracer can not be null");
-
-        return create(new LambdaSubscriber<>(onNext, onError, onComplete, onSubscribe), operationName, tracer);
-    }
-
-    public static <T> FlowableSubscriber<T> create(
-            FlowableSubscriber<T> subscriber,
-            String operationName,
-            Tracer tracer) {
-
-        return new TracingSubscriber<>(subscriber, operationName, tracer);
-    }
+    return new TracingSubscriber<>(subscriber, operationName, tracer);
+  }
 }

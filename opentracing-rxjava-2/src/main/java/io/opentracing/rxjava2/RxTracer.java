@@ -17,7 +17,6 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ final class RxTracer {
 
   void onSubscribe() {
     span = tracer.buildSpan(operationName)
-            .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
+        .withTag(Tags.COMPONENT.getKey(), COMPONENT_NAME).start();
     Scope scope = tracer.activateSpan(span);
     SpanHolder.set(scope, span);
   }
