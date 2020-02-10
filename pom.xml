@@ -69,6 +69,7 @@
   <modules>
     <module>opentracing-rxjava-1</module>
     <module>opentracing-rxjava-2</module>
+    <module>opentracing-rxjava-3</module>
   </modules>
 
   <dependencies>
