@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 The OpenTracing Authors
+ * Copyright 2017-2020 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,7 +43,7 @@ public class TracingConsumer<T> implements Observer<T>, Disposable {
   }
 
   public TracingConsumer(Consumer<? super T> onNext, Consumer<? super Throwable> onError,
-                         Action onComplete, String operationName, Tracer tracer) {
+      Action onComplete, String operationName, Tracer tracer) {
     this(onNext, onError, onComplete, Functions.emptyConsumer(),
         operationName, tracer);
   }

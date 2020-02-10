@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 The OpenTracing Authors
+ * Copyright 2017-2020 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,14 +28,13 @@ import static org.junit.Assert.assertNull;
 import io.opentracing.Scope;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.disposables.Disposable;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +45,7 @@ public class TracingObserverTest {
   @Before
   public void before() {
     mockTracer.reset();
-    TracingRxJavaUtils.enableTracing(mockTracer);
+    TracingRxJava3Utils.enableTracing(mockTracer);
   }
 
   @Test

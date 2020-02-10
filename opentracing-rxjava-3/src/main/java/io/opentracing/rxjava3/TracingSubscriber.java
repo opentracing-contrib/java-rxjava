@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 The OpenTracing Authors
+ * Copyright 2017-2020 The OpenTracing Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,17 +13,16 @@
  */
 package io.opentracing.rxjava3;
 
+import static java.util.Objects.requireNonNull;
+
 import io.opentracing.Tracer;
 import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.functions.Action;
 import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.internal.functions.Functions;
-import io.reactivex.rxjava3.internal.functions.ObjectHelper;
 import io.reactivex.rxjava3.internal.operators.flowable.FlowableInternalHelper;
 import io.reactivex.rxjava3.internal.subscribers.LambdaSubscriber;
 import org.reactivestreams.Subscription;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Tracing decorator for RxJava {@link FlowableSubscriber}
