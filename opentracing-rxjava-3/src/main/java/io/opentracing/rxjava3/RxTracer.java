@@ -24,7 +24,7 @@ import java.util.Map;
 
 final class RxTracer {
 
-  static final String COMPONENT_NAME = "rxjava-2";
+  static final String COMPONENT_NAME = "rxjava-3";
 
   private final String operationName;
   private final Tracer tracer;
