@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>opentracing-rxjava-3</artifactId>
-  <name>${project.groupId}:${project.artifactId}</name>
+  <name>OpenTracing Instrumentation for RxJava 3</name>
   <description>OpenTracing Instrumentation for RxJava 3</description>
 
   <dependencies>
