@@ -25,6 +25,16 @@ pom.xml
 </dependency>
 ```
 
+### RxJava 3
+pom.xml
+```xml
+<dependency>
+    <groupId>io.opentracing.contrib</groupId>
+    <artifactId>opentracing-rxjava-3</artifactId>
+    <version>VERSION</version>
+</dependency>
+```
+
 ## Usage
 
 
@@ -78,11 +88,16 @@ TracingObserverSubscriber<Integer> tracingSubscriber = new TracingObserverSubscr
 observable.subscribe(tracingSubscriber);
 ```
 
-### RxJava 2
+### RxJava 2 / RxJava 3
 
 ```java
 // Enable Tracing via TracingRxJava2Utils
+
+// For RxJava 2:
 TracingRxJava2Utils.enableTracing(tracer);
+
+// For RxJava 3:
+TracingRxJava3Utils.enableTracing(tracer);
 ```
 
 #### Observer
